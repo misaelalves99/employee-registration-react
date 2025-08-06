@@ -1,0 +1,47 @@
+/* src/components/navbar/Navbar.module.css */
+
+.navbar {
+  background-color: #2563eb; /* blue-600 */
+  padding: 0.75rem 1rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  color: white;
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+
+.navList {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navItem a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  padding-bottom: 0.2rem;
+  transition: border-bottom-color 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.navItem a:hover {
+  border-bottom-color: #93c5fd; /* blue-300 */
+}
+
+.activeLink {
+  border-bottom-color: #93c5fd; /* blue-300 */
+  font-weight: 700;
+}
