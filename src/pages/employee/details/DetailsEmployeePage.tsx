@@ -4,6 +4,7 @@ import { Employee } from '../../../types/employee'
 import { getEmployeeById } from '../../../lib/mock/employees'
 import styles from './DetailsEmployeePage.module.css'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface Props {
   id: string
@@ -12,6 +13,7 @@ interface Props {
 export default function DetailsEmployeePage({ id }: Props) {
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [notFound, setNotFound] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const numericId = Number(id)
@@ -32,7 +34,7 @@ export default function DetailsEmployeePage({ id }: Props) {
   }, [id])
 
   if (notFound) {
-    return <NotFound onBack={() => window.history.back()} />
+    return <NotFound onBack={() => navigate('/employee')} />
   }
 
   if (!employee) {
@@ -88,16 +90,14 @@ export default function DetailsEmployeePage({ id }: Props) {
       <div className={styles.buttonGroup}>
         <button
           className={styles.btnSecondary}
-          onClick={() => window.history.back()}
+          onClick={() => navigate('/employee')}
           type="button"
         >
           Voltar
         </button>
         <button
           className={styles.btnPrimary}
-          onClick={() => {
-            window.location.href = `/employee/${employee.id}/edit`
-          }}
+          onClick={() => navigate(`/employee/edit/${employee.id}`)}
           type="button"
         >
           Editar
