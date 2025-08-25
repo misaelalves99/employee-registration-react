@@ -1,3 +1,5 @@
+// src/App.tsx
+
 import { ReactNode } from 'react'
 import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom'
 import Navbar from './components/navbar/Navbar'

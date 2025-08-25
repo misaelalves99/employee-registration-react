@@ -18,7 +18,7 @@ export function EmployeeCreateForm({ departments, onCreate }: EmployeeCreateForm
     phone: '',
     address: '',
     position: '' as Position | '',
-    departmentId: '',
+    departmentId: '' as number | '',  // << importante: id é number
     salary: '',
     admissionDate: '',
   });
@@ -26,7 +26,8 @@ export function EmployeeCreateForm({ departments, onCreate }: EmployeeCreateForm
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const value = e.target.name === 'departmentId' ? Number(e.target.value) : e.target.value;
+    setForm({ ...form, [e.target.name]: value });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -46,7 +47,8 @@ export function EmployeeCreateForm({ departments, onCreate }: EmployeeCreateForm
 
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
-      formData.append(key, value);
+      // Converte number para string antes de passar para FormData
+      formData.append(key, typeof value === 'number' ? value.toString() : value);
     });
 
     await onCreate(formData);

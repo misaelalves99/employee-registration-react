@@ -11,7 +11,7 @@ export interface Employee {
   phone?: string
   address?: string
   position: Position
-  department?: Department
+  department?: Department | null   // <<< permite null agora
   departmentId?: number | null
   salary: number
   admissionDate: string

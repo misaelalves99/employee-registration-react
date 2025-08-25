@@ -1,4 +1,4 @@
-// types/position.ts
+// src/types/position.ts
 
 export const POSITIONS = [
   'Desenvolvedor',
@@ -6,7 +6,9 @@ export const POSITIONS = [
   'Gerente',
   'Estagiário',
   'Outro',
+  'Designer',
+  'Coordenador',
 ] as const;
 
-export type Position = typeof POSITIONS[number];
-export type PositionFormValue = '' | Position;
+export type Position = (typeof POSITIONS)[number];
+export type PositionFormValue = Position | ''; // permite string vazia para select

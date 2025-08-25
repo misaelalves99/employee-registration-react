@@ -1,6 +1,7 @@
 // src/lib/mock/employees.ts
 
 import { Employee } from '../../types/employee';
+import { Position } from '../../types/position';
 import { mockDepartments } from './departments';
 
 export const mockEmployees: Employee[] = [
@@ -11,7 +12,7 @@ export const mockEmployees: Employee[] = [
     email: 'joao@example.com',
     phone: '(11) 99999-9999',
     address: 'Rua A, 123',
-    position: 'Desenvolvedor',
+    position: 'Desenvolvedor' as Position,
     department: { id: 1, name: 'TI' },
     departmentId: 1,
     salary: 5500,
@@ -25,7 +26,7 @@ export const mockEmployees: Employee[] = [
     email: 'maria@example.com',
     phone: '(11) 98888-8888',
     address: 'Rua B, 456',
-    position: 'Analista',
+    position: 'Analista' as Position,
     department: { id: 2, name: 'RH' },
     departmentId: 2,
     salary: 4700,
@@ -34,50 +35,52 @@ export const mockEmployees: Employee[] = [
   },
 ];
 
+/**
+ * Retorna funcionário pelo ID
+ */
 export function getEmployeeById(id: number): Employee | null {
-  return mockEmployees.find(e => e.id === id) || null;
+  return mockEmployees.find((e) => e.id === id) ?? null;
 }
 
-export function getAllMockEmployees(): (Employee & { departmentName: string; hiredDate: string; active: boolean })[] {
-  return mockEmployees.map(emp => ({
-    ...emp,
-    departmentName: emp.department?.name ?? '-',
-    hiredDate: emp.admissionDate,
-    active: emp.isActive,
+/**
+ * Retorna todos funcionários com campos extras
+ */
+export function getAllMockEmployees() {
+  return mockEmployees.map((e) => ({
+    ...e,
+    departmentName: e.department?.name ?? null,
+    hiredDate: e.admissionDate,
+    active: e.isActive,
   }));
 }
 
+/**
+ * Atualiza funcionário
+ */
 export function updateMockEmployee(id: number, data: Partial<Employee>): boolean {
-  const index = mockEmployees.findIndex(e => e.id === id);
-  if (index !== -1) {
-    mockEmployees[index] = {
-      ...mockEmployees[index],
-      ...data,
-      department: data.departmentId
-        ? {
-            id: data.departmentId,
-            name: getDepartmentNameById(data.departmentId),
-          }
-        : mockEmployees[index].department,
-    };
-    return true;
-  }
-  return false;
+  const index = mockEmployees.findIndex((e) => e.id === id);
+  if (index === -1) return false;
+
+  const dept = data.departmentId
+    ? mockDepartments.find((d) => d.id === data.departmentId)
+    : mockEmployees[index].department;
+
+  mockEmployees[index] = {
+    ...mockEmployees[index],
+    ...data,
+    department: dept ?? mockEmployees[index].department,
+  };
+
+  return true;
 }
 
-function getDepartmentNameById(id: number): string {
-  const dep = mockDepartments.find(d => d.id === id);
-  return dep ? dep.name : 'Desconhecido';
-}
-
-export function createMockEmployee(newEmployee: Employee): void {
+/**
+ * Cria novo funcionário
+ */
+export function createMockEmployee(employee: Employee): void {
+  const dept = mockDepartments.find((d) => d.id === employee.departmentId) ?? null;
   mockEmployees.push({
-    ...newEmployee,
-    department: newEmployee.departmentId
-      ? {
-          id: newEmployee.departmentId,
-          name: getDepartmentNameById(newEmployee.departmentId),
-        }
-      : undefined,
+    ...employee,
+    department: dept,
   });
 }

@@ -8,7 +8,8 @@ import { EmployeeDeleteModal } from '../../components/employee/EmployeeDeleteMod
 import { mockEmployees } from '../../lib/mock/employees';
 import styles from './EmployeePage.module.css';
 
-interface EmployeeFilters {
+// ✅ Exportando para uso em testes
+export interface EmployeeFilters {
   search?: string;
   departmentId?: number;
   position?: string;
@@ -125,17 +126,11 @@ export default function EmployeePage() {
                     <td className={styles.td}>{emp.cpf}</td>
                     <td className={styles.td}>{emp.position}</td>
                     <td className={styles.td}>{emp.department?.name || '-'}</td>
-                    <td className={styles.td}>
-                      {new Date(emp.admissionDate).toLocaleDateString('pt-BR')}
-                    </td>
+                    <td className={styles.td}>{new Date(emp.admissionDate).toLocaleDateString('pt-BR')}</td>
                     <td className={styles.td}>{emp.isActive ? 'Ativo' : 'Inativo'}</td>
                     <td className={`${styles.td} ${styles.actions}`}>
-                      <Link to={`/employee/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>
-                        Detalhes
-                      </Link>
-                      <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>
-                        Editar
-                      </Link>
+                      <Link to={`/employee/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>Detalhes</Link>
+                      <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>Editar</Link>
                       <button
                         onClick={() => toggleActiveStatus(emp)}
                         className={`${styles.btn} ${emp.isActive ? styles.btnSecondary : styles.btnSuccess}`}

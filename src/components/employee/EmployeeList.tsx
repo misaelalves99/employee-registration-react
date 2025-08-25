@@ -2,13 +2,15 @@
 
 import { Employee } from '../../types/employee';
 import styles from './EmployeeList.module.css';
+import { Link } from 'react-router-dom';
 
 interface EmployeeListProps {
   employees: Employee[];
   onDelete: (employee: Employee) => void;
+  onToggleStatus?: (employee: Employee) => void; // opcional, melhor que usar <form>
 }
 
-export default function EmployeeList({ employees, onDelete }: EmployeeListProps) {
+export default function EmployeeList({ employees, onDelete, onToggleStatus }: EmployeeListProps) {
   return (
     <table className={styles.table}>
       <thead className={styles.thead}>
@@ -45,33 +47,24 @@ export default function EmployeeList({ employees, onDelete }: EmployeeListProps)
             </td>
             <td className={styles.td}>{emp.isActive ? 'Ativo' : 'Inativo'}</td>
             <td className={`${styles.td} ${styles.actions}`}>
-              <a href={`/employee/details/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>
+              <Link to={`/employee/details/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>
                 Detalhes
-              </a>
-              <a href={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>
+              </Link>
+              <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>
                 Editar
-              </a>
-              {emp.isActive ? (
-                <form action={`/api/employee/inactivate/${emp.id}`} method="POST">
-                  <button
-                    type="submit"
-                    className={`${styles.btn} ${styles.btnSecondary}`}
-                    title="Inativar"
-                  >
-                    Inativar
-                  </button>
-                </form>
-              ) : (
-                <form action={`/api/employee/reactivate/${emp.id}`} method="POST">
-                  <button
-                    type="submit"
-                    className={`${styles.btn} ${styles.btnSuccess}`}
-                    title="Ativar"
-                  >
-                    Ativar
-                  </button>
-                </form>
+              </Link>
+
+              {onToggleStatus && (
+                <button
+                  type="button"
+                  className={`${styles.btn} ${emp.isActive ? styles.btnSecondary : styles.btnSuccess}`}
+                  onClick={() => onToggleStatus(emp)}
+                  title={emp.isActive ? 'Inativar' : 'Ativar'}
+                >
+                  {emp.isActive ? 'Inativar' : 'Ativar'}
+                </button>
               )}
+
               <button
                 onClick={() => onDelete(emp)}
                 className={`${styles.btn} ${styles.btnDanger}`}
