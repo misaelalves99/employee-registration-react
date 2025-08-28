@@ -83,82 +83,84 @@ export default function EmployeePage() {
 
   return (
     <main className={styles.container}>
-      <h1 className={styles.title}>Lista de Funcionários</h1>
+      <div>
+        <h1 className={styles.title}>Lista de Funcionários</h1>
 
-      <div className={styles.contentWrapper}>
-        <aside className={styles.sidebar}>
-          <EmployeeFilter onFilterChange={setFilters} />
-        </aside>
+        <div className={styles.contentWrapper}>
+          <aside className={styles.sidebar}>
+            <EmployeeFilter onFilterChange={setFilters} />
+          </aside>
 
-        <section className={styles.rightSection}>
-          <div className={styles.topBar}>
-            <Link to="/employee/create" className={styles.btnPrimary}>
-              Novo Funcionário
-            </Link>
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Buscar por nome, CPF, e-mail ou telefone..."
-              className={styles.searchInput}
-            />
-          </div>
+          <section className={styles.rightSection}>
+            <div className={styles.topBar}>
+              <Link to="/employee/create" className={styles.btnPrimary}>
+                Novo Funcionário
+              </Link>
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Buscar por nome, CPF, e-mail ou telefone..."
+                className={styles.searchInput}
+              />
+            </div>
 
-          {employees.length === 0 ? (
-            <p className={styles.noResults}>Nenhum funcionário encontrado.</p>
-          ) : (
-            <table className={styles.table}>
-              <thead className={styles.thead}>
-                <tr>
-                  <th className={styles.th}>Nome</th>
-                  <th className={styles.th}>CPF</th>
-                  <th className={styles.th}>Cargo</th>
-                  <th className={styles.th}>Departamento</th>
-                  <th className={styles.th}>Admissão</th>
-                  <th className={styles.th}>Status</th>
-                  <th className={styles.th}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map(emp => (
-                  <tr key={emp.id} className={styles.trHover}>
-                    <td className={styles.td}>{emp.name}</td>
-                    <td className={styles.td}>{emp.cpf}</td>
-                    <td className={styles.td}>{emp.position}</td>
-                    <td className={styles.td}>{emp.department?.name || '-'}</td>
-                    <td className={styles.td}>{new Date(emp.admissionDate).toLocaleDateString('pt-BR')}</td>
-                    <td className={styles.td}>{emp.isActive ? 'Ativo' : 'Inativo'}</td>
-                    <td className={`${styles.td} ${styles.actions}`}>
-                      <Link to={`/employee/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>Detalhes</Link>
-                      <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>Editar</Link>
-                      <button
-                        onClick={() => toggleActiveStatus(emp)}
-                        className={`${styles.btn} ${emp.isActive ? styles.btnSecondary : styles.btnSuccess}`}
-                      >
-                        {emp.isActive ? 'Inativar' : 'Ativar'}
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(emp)}
-                        className={`${styles.btn} ${styles.btnDanger}`}
-                      >
-                        Deletar
-                      </button>
-                    </td>
+            {employees.length === 0 ? (
+              <p className={styles.noResults}>Nenhum funcionário encontrado.</p>
+            ) : (
+              <table className={styles.table}>
+                <thead className={styles.thead}>
+                  <tr>
+                    <th className={styles.th}>Nome</th>
+                    <th className={styles.th}>CPF</th>
+                    <th className={styles.th}>Cargo</th>
+                    <th className={styles.th}>Departamento</th>
+                    <th className={styles.th}>Admissão</th>
+                    <th className={styles.th}>Status</th>
+                    <th className={styles.th}>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      </div>
+                </thead>
+                <tbody>
+                  {employees.map(emp => (
+                    <tr key={emp.id} className={styles.trHover}>
+                      <td className={styles.td}>{emp.name}</td>
+                      <td className={styles.td}>{emp.cpf}</td>
+                      <td className={styles.td}>{emp.position}</td>
+                      <td className={styles.td}>{emp.department?.name || '-'}</td>
+                      <td className={styles.td}>{new Date(emp.admissionDate).toLocaleDateString('pt-BR')}</td>
+                      <td className={styles.td}>{emp.isActive ? 'Ativo' : 'Inativo'}</td>
+                      <td className={`${styles.td} ${styles.actions}`}>
+                        <Link to={`/employee/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>Detalhes</Link>
+                        <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>Editar</Link>
+                        <button
+                          onClick={() => toggleActiveStatus(emp)}
+                          className={`${styles.btn} ${emp.isActive ? styles.btnSecondary : styles.btnSuccess}`}
+                        >
+                          {emp.isActive ? 'Inativar' : 'Ativar'}
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(emp)}
+                          className={`${styles.btn} ${styles.btnDanger}`}
+                        >
+                          Deletar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+        </div>
 
-      {selectedEmployeeToDelete && (
-        <EmployeeDeleteModal
-          employee={selectedEmployeeToDelete}
-          onClose={closeDeleteModal}
-          onDeleted={handleDeleteConfirmed}
-        />
-      )}
+        {selectedEmployeeToDelete && (
+          <EmployeeDeleteModal
+            employee={selectedEmployeeToDelete}
+            onClose={closeDeleteModal}
+            onDeleted={handleDeleteConfirmed}
+          />
+        )}
+      </div>
     </main>
   );
 }
