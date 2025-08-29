@@ -102,14 +102,9 @@ export default function CreateEmployeePage() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Criar Funcionário</h1>
+
       <form onSubmit={handleSubmit} className={styles.form}>
-        {[
-          ['name', 'Nome'],
-          ['cpf', 'CPF'],
-          ['email', 'Email'],
-          ['phone', 'Telefone'],
-          ['address', 'Endereço'],
-        ].map(([key, label]) => (
+        {[['name', 'Nome'], ['cpf', 'CPF'], ['email', 'Email'], ['phone', 'Telefone'], ['address', 'Endereço']].map(([key, label]) => (
           <div className={styles.field} key={key}>
             <label htmlFor={key} className={styles.label}>
               {label}:
@@ -127,9 +122,7 @@ export default function CreateEmployeePage() {
         ))}
 
         <div className={styles.field}>
-          <label htmlFor="salary" className={styles.label}>
-            Salário:
-          </label>
+          <label htmlFor="salary" className={styles.label}>Salário:</label>
           <input
             type="number"
             id="salary"
@@ -143,9 +136,7 @@ export default function CreateEmployeePage() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="admissionDate" className={styles.label}>
-            Data de Admissão:
-          </label>
+          <label htmlFor="admissionDate" className={styles.label}>Data de Admissão:</label>
           <input
             type="date"
             id="admissionDate"
@@ -158,9 +149,7 @@ export default function CreateEmployeePage() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="departmentId" className={styles.label}>
-            Departamento:
-          </label>
+          <label htmlFor="departmentId" className={styles.label}>Departamento:</label>
           <select
             id="departmentId"
             name="departmentId"
@@ -171,17 +160,13 @@ export default function CreateEmployeePage() {
           >
             <option value="">Selecione...</option>
             {departments.map((d) => (
-              <option key={d.id} value={d.id.toString()}>
-                {d.name}
-              </option>
+              <option key={d.id} value={d.id.toString()}>{d.name}</option>
             ))}
           </select>
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="position" className={styles.label}>
-            Cargo:
-          </label>
+          <label htmlFor="position" className={styles.label}>Cargo:</label>
           <select
             id="position"
             name="position"
@@ -192,9 +177,7 @@ export default function CreateEmployeePage() {
           >
             <option value="">Selecione...</option>
             {positions.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
+              <option key={p} value={p}>{p}</option>
             ))}
           </select>
         </div>
@@ -210,8 +193,16 @@ export default function CreateEmployeePage() {
           />
           <label htmlFor="isActive">Ativo</label>
         </div>
-        <button type="submit" className={styles.button}>
-          Criar Funcionário
+
+        <button type="submit" className={styles.button}>Criar Funcionário</button>
+        
+        {/* Botão Voltar */}
+        <button
+          type="button"
+          className={`${styles.button} ${styles.backButton}`}
+          onClick={() => navigate('/employee')}
+        >
+          Voltar
         </button>
       </form>
     </div>

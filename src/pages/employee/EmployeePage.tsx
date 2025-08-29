@@ -8,14 +8,11 @@ import { EmployeeDeleteModal } from '../../components/employee/EmployeeDeleteMod
 import { mockEmployees } from '../../lib/mock/employees';
 import styles from './EmployeePage.module.css';
 
-// ✅ Exportando para uso em testes
 export interface EmployeeFilters {
   search?: string;
   departmentId?: number;
   position?: string;
   isActive?: boolean;
-  admissionDateFrom?: string;
-  admissionDateTo?: string;
 }
 
 export default function EmployeePage() {
@@ -32,7 +29,6 @@ export default function EmployeePage() {
       filtered = filtered.filter(emp =>
         emp.name.toLowerCase().includes(q) ||
         emp.email.toLowerCase().includes(q) ||
-        emp.cpf.includes(q) ||
         emp.phone?.includes(q)
       );
     }
@@ -45,10 +41,6 @@ export default function EmployeePage() {
           filtered = filtered.filter(emp => emp.department?.id === value);
         } else if (key === 'position' && typeof value === 'string') {
           filtered = filtered.filter(emp => emp.position === value);
-        } else if (key === 'admissionDateFrom' && typeof value === 'string') {
-          filtered = filtered.filter(emp => new Date(emp.admissionDate) >= new Date(value));
-        } else if (key === 'admissionDateTo' && typeof value === 'string') {
-          filtered = filtered.filter(emp => new Date(emp.admissionDate) <= new Date(value));
         }
       }
     });
@@ -74,9 +66,13 @@ export default function EmployeePage() {
   };
 
   const toggleActiveStatus = (emp: Employee) => {
+    const action = emp.isActive ? 'inativar' : 'ativar';
+    const confirmAction = window.confirm(`Tem certeza que deseja ${action} o funcionário ${emp.name}?`);
+    if (!confirmAction) return;
+
     const index = mockEmployees.findIndex(e => e.id === emp.id);
     if (index !== -1) {
-      mockEmployees[index].isActive = !mockEmployees[index].isActive;
+      mockEmployees[index].isActive = !emp.isActive;
       fetchEmployees();
     }
   };
@@ -100,7 +96,7 @@ export default function EmployeePage() {
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Buscar por nome, CPF, e-mail ou telefone..."
+                placeholder="Buscar por nome, e-mail ou telefone..."
                 className={styles.searchInput}
               />
             </div>
@@ -112,10 +108,8 @@ export default function EmployeePage() {
                 <thead className={styles.thead}>
                   <tr>
                     <th className={styles.th}>Nome</th>
-                    <th className={styles.th}>CPF</th>
                     <th className={styles.th}>Cargo</th>
                     <th className={styles.th}>Departamento</th>
-                    <th className={styles.th}>Admissão</th>
                     <th className={styles.th}>Status</th>
                     <th className={styles.th}>Ações</th>
                   </tr>
@@ -124,14 +118,16 @@ export default function EmployeePage() {
                   {employees.map(emp => (
                     <tr key={emp.id} className={styles.trHover}>
                       <td className={styles.td}>{emp.name}</td>
-                      <td className={styles.td}>{emp.cpf}</td>
                       <td className={styles.td}>{emp.position}</td>
                       <td className={styles.td}>{emp.department?.name || '-'}</td>
-                      <td className={styles.td}>{new Date(emp.admissionDate).toLocaleDateString('pt-BR')}</td>
                       <td className={styles.td}>{emp.isActive ? 'Ativo' : 'Inativo'}</td>
                       <td className={`${styles.td} ${styles.actions}`}>
-                        <Link to={`/employee/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>Detalhes</Link>
-                        <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>Editar</Link>
+                        <Link to={`/employee/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>
+                          Detalhes
+                        </Link>
+                        <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>
+                          Editar
+                        </Link>
                         <button
                           onClick={() => toggleActiveStatus(emp)}
                           className={`${styles.btn} ${emp.isActive ? styles.btnSecondary : styles.btnSuccess}`}

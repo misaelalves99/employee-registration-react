@@ -2,22 +2,38 @@
 
 .main {
   display: flex;
-  min-height: 100vh;
   flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  min-height: 80vh;
+  padding: 3rem 2rem;
+  background-color: #f9fafb; /* fundo claro e neutro */
+  font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .title {
-  font-size: 1.875rem; /* text-3xl */
-  font-weight: bold;
-  margin-bottom: 1rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827; /* cinza escuro elegante */
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .text {
-  color: #374151; /* gray-700 */
-  max-width: 42rem; /* max-w-2xl */
+  font-size: 1rem;
+  color: #4b5563; /* cinza médio para leitura confortável */
+  max-width: 700px;
+  line-height: 1.8;
+  text-align: justify;
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .text {
+    font-size: 0.95rem;
+    padding: 0 1rem;
+  }
 }

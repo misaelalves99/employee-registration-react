@@ -1,5 +1,6 @@
 // src/pages/HomePage.tsx
 
+import { Link } from 'react-router-dom';
 import styles from './HomePage.module.css';
 
 export default function HomePage() {
@@ -12,6 +13,10 @@ export default function HomePage() {
         Este sistema permite o cadastro, edição e gerenciamento de funcionários da empresa.
         Desenvolvido para gerenciar registros de desenvolvedores, gerentes e funcionários de forma simples e intuitiva.
       </p>
+
+      <Link to="/employee" className={styles.btnPrimary}>
+        Ir para Funcionários
+      </Link>
     </main>
   );
 }
