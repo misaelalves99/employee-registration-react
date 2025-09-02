@@ -29,13 +29,19 @@ jest.mock('react-router-dom', () => ({
 
 describe('CreateEmployeePage', () => {
   beforeEach(() => {
-    (getMockDepartments as jest.Mock).mockResolvedValue([
+    const mockGetDepartments = getMockDepartments as jest.Mock;
+    const mockGetPositions = getMockPositions as jest.Mock;
+    const mockCreateEmployee = createMockEmployee as jest.Mock;
+
+    mockGetDepartments.mockResolvedValue([
       { id: 1, name: 'TI' },
       { id: 2, name: 'RH' },
     ]);
-    (getMockPositions as jest.Mock).mockResolvedValue(['Desenvolvedor', 'Analista']);
+    mockGetPositions.mockResolvedValue(['Desenvolvedor', 'Analista']);
+    mockCreateEmployee.mockResolvedValue(undefined);
+
     mockedNavigate.mockReset();
-    (createMockEmployee as jest.Mock).mockResolvedValue(undefined);
+    window.alert = jest.fn();
   });
 
   it('renderiza o loading inicialmente', () => {
@@ -62,7 +68,6 @@ describe('CreateEmployeePage', () => {
   })
 
   it('mostra alerta se campos obrigatórios não estiverem preenchidos', async () => {
-    window.alert = jest.fn()
     render(
       <MemoryRouter>
         <CreateEmployeePage />
@@ -98,5 +103,46 @@ describe('CreateEmployeePage', () => {
       expect(createMockEmployee).toHaveBeenCalled()
       expect(mockedNavigate).toHaveBeenCalledWith('/employee')
     })
+  })
+
+  it('envia isActive corretamente ao criar funcionário', async () => {
+    render(
+      <MemoryRouter>
+        <CreateEmployeePage />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => screen.getByLabelText(/nome/i))
+
+    fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Ana' } })
+    fireEvent.change(screen.getByLabelText(/cpf/i), { target: { value: '111.222.333-44' } })
+    fireEvent.change(screen.getByLabelText(/salário/i), { target: { value: '4500' } })
+    fireEvent.change(screen.getByLabelText(/departamento/i), { target: { value: '2' } })
+    fireEvent.change(screen.getByLabelText(/cargo/i), { target: { value: 'Analista' } })
+
+    // desmarca o checkbox Ativo para enviar false
+    fireEvent.click(screen.getByLabelText(/ativo/i))
+
+    fireEvent.click(screen.getByText(/criar funcionário/i))
+
+    await waitFor(() => {
+      expect(createMockEmployee).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: false })
+      )
+      expect(mockedNavigate).toHaveBeenCalledWith('/employee')
+    })
+  })
+
+  it('botão Voltar chama navigate corretamente', async () => {
+    render(
+      <MemoryRouter>
+        <CreateEmployeePage />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => screen.getByText(/voltar/i))
+
+    fireEvent.click(screen.getByText(/voltar/i))
+    expect(mockedNavigate).toHaveBeenCalledWith('/employee')
   })
 })

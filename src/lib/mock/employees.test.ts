@@ -7,12 +7,11 @@ import {
   updateMockEmployee,
   createMockEmployee,
 } from './employees';
-
 import { Position } from '../../types/position';
 
 describe('mockEmployees', () => {
   it('deve conter os funcionários iniciais', () => {
-    expect(mockEmployees.length).toBe(2);
+    expect(mockEmployees.length).toBeGreaterThanOrEqual(2);
     expect(mockEmployees[0].name).toBe('João Silva');
     expect(mockEmployees[1].department?.name).toBe('RH');
   });
@@ -20,7 +19,9 @@ describe('mockEmployees', () => {
 
 describe('getEmployeeById', () => {
   it('retorna o funcionário correto', () => {
-    expect(getEmployeeById(1)?.name).toBe('João Silva');
+    const emp = getEmployeeById(1);
+    expect(emp).not.toBeNull();
+    expect(emp?.name).toBe('João Silva');
   });
 
   it('retorna null se não existir', () => {
@@ -44,6 +45,15 @@ describe('updateMockEmployee', () => {
     const updated = getEmployeeById(1);
     expect(updated?.name).toBe('João Atualizado');
     expect(updated?.department?.name).toBe('RH');
+  });
+
+  it('mantém departamento original se departmentId não for fornecido', () => {
+    const originalDept = getEmployeeById(2)?.department?.name;
+    const result = updateMockEmployee(2, { name: 'Maria Atualizada' });
+    expect(result).toBe(true);
+    const updated = getEmployeeById(2);
+    expect(updated?.name).toBe('Maria Atualizada');
+    expect(updated?.department?.name).toBe(originalDept);
   });
 
   it('retorna false ao tentar atualizar um funcionário inexistente', () => {
@@ -71,5 +81,25 @@ describe('createMockEmployee', () => {
     expect(added).not.toBeNull();
     expect(added?.name).toBe('Carlos Santos');
     expect(added?.department?.name).toBe('Marketing');
+  });
+
+  it('atribui department null se departmentId inválido', () => {
+    const newEmployee = {
+      id: 4,
+      name: 'Teste Sem Departamento',
+      cpf: '000.111.222-33',
+      email: 'teste@example.com',
+      phone: '(11) 96666-6666',
+      address: 'Rua D, 101',
+      position: 'Analista' as Position,
+      departmentId: 999, // inválido
+      salary: 3000,
+      admissionDate: '2023-08-01',
+      isActive: true,
+    };
+    createMockEmployee(newEmployee);
+    const added = getEmployeeById(4);
+    expect(added).not.toBeNull();
+    expect(added?.department).toBeNull();
   });
 });

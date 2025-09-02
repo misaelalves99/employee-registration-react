@@ -1,13 +1,13 @@
 // src/components/employee/FilterPanel.test.tsx
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { FilterPanel } from './FilterPanel';
+import { FilterPanel, FilterPanelProps } from './FilterPanel';
 
 describe('FilterPanel', () => {
-  const onFilterChangeMock = jest.fn();
+  let onFilterChangeMock: jest.MockedFunction<FilterPanelProps['onFilterChange']>;
 
   beforeEach(() => {
-    onFilterChangeMock.mockClear();
+    onFilterChangeMock = jest.fn();
   });
 
   it('renderiza todos os campos e botão', () => {
@@ -51,13 +51,28 @@ describe('FilterPanel', () => {
 
   it('trata campos vazios corretamente', () => {
     render(<FilterPanel onFilterChange={onFilterChangeMock} />);
-
     const button = screen.getByText('Aplicar Filtros');
+
+    fireEvent.click(button);
+
+    expect(onFilterChangeMock).toHaveBeenCalledTimes(1);
+    expect(onFilterChangeMock).toHaveBeenCalledWith({
+      position: undefined,
+      departmentId: undefined,
+    });
+  });
+
+  it('converte corretamente departmentId se digitado zero', () => {
+    render(<FilterPanel onFilterChange={onFilterChangeMock} />);
+    const departmentInput = screen.getByLabelText('Departamento') as HTMLInputElement;
+    const button = screen.getByText('Aplicar Filtros');
+
+    fireEvent.change(departmentInput, { target: { value: '0' } });
     fireEvent.click(button);
 
     expect(onFilterChangeMock).toHaveBeenCalledWith({
       position: undefined,
-      departmentId: undefined,
+      departmentId: 0,
     });
   });
 });

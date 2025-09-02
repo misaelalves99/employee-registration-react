@@ -10,6 +10,13 @@ describe('mockDepartments', () => {
       { id: 3, name: 'Marketing' },
     ]);
   });
+
+  it('cada departamento deve ter id e name corretos', () => {
+    mockDepartments.forEach((dept, index) => {
+      expect(dept).toHaveProperty('id', index + 1);
+      expect(typeof dept.name).toBe('string');
+    });
+  });
 });
 
 describe('getMockDepartments', () => {
@@ -18,5 +25,11 @@ describe('getMockDepartments', () => {
     expect(departments).toEqual(mockDepartments);
     expect(Array.isArray(departments)).toBe(true);
     expect(departments.length).toBe(3);
+  });
+
+  it('deve retornar uma nova instância do array a cada chamada', async () => {
+    const dep1 = await getMockDepartments();
+    const dep2 = await getMockDepartments();
+    expect(dep1).not.toBe(dep2); // garante que não é a mesma referência
   });
 });

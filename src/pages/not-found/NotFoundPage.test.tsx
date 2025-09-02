@@ -13,7 +13,9 @@ describe('NotFoundPage', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/erro 404/i);
-    expect(screen.getByText(/a página que você está procurando não foi encontrada/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/a página que você está procurando não foi encontrada/i)
+    ).toBeInTheDocument();
   });
 
   it('possui link de retorno à página inicial', () => {

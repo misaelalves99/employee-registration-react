@@ -38,8 +38,8 @@ describe('Modal', () => {
 
     expect(screen.getByText('Título do Modal')).toBeInTheDocument();
     expect(screen.getByText('Corpo do modal')).toBeInTheDocument();
-    expect(screen.getByText('Cancelar')).toBeInTheDocument();
-    expect(screen.getByText('Confirmar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmar' })).toBeInTheDocument();
   });
 
   it('renderiza botões com labels customizados', () => {
@@ -55,8 +55,8 @@ describe('Modal', () => {
       />
     );
 
-    expect(screen.getByText('Sim')).toBeInTheDocument();
-    expect(screen.getByText('Não')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sim' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Não' })).toBeInTheDocument();
   });
 
   it('chama onClose e onConfirm ao clicar nos botões', () => {
@@ -70,10 +70,10 @@ describe('Modal', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('Cancelar'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(onCloseMock).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByText('Confirmar'));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
     expect(onConfirmMock).toHaveBeenCalledTimes(1);
   });
 });

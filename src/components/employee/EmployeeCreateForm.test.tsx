@@ -52,7 +52,7 @@ describe('EmployeeCreateForm', () => {
     userEvent.type(screen.getByLabelText(/Telefone/i), '1111-1111');
     userEvent.type(screen.getByLabelText(/Endereço/i), 'Rua A, 123');
     userEvent.selectOptions(screen.getByLabelText(/Cargo/i), POSITIONS[0]);
-    userEvent.selectOptions(screen.getByLabelText(/Departamento/i),mockDepartments[0].id.toString());
+    userEvent.selectOptions(screen.getByLabelText(/Departamento/i), mockDepartments[0].id.toString());
     userEvent.type(screen.getByLabelText(/Salário/i), '2500');
     userEvent.type(screen.getByLabelText(/Data de Admissão/i), '2025-08-21');
 
@@ -62,12 +62,14 @@ describe('EmployeeCreateForm', () => {
       expect(onCreateMock).toHaveBeenCalledTimes(1);
     });
 
-    const formDataArg = onCreateMock.mock.calls[0][0];
+    const formDataArg = onCreateMock.mock.calls[0][0] as FormData;
     expect(formDataArg.get('name')).toBe('John Doe');
     expect(formDataArg.get('cpf')).toBe('12345678900');
     expect(formDataArg.get('email')).toBe('john@example.com');
+    expect(formDataArg.get('phone')).toBe('1111-1111');
+    expect(formDataArg.get('address')).toBe('Rua A, 123');
     expect(formDataArg.get('position')).toBe(POSITIONS[0]);
-    expect(formDataArg.get('departmentId')).toBe(mockDepartments[0].id);
+    expect(formDataArg.get('departmentId')).toBe(mockDepartments[0].id.toString()); // sempre string
     expect(formDataArg.get('salary')).toBe('2500');
     expect(formDataArg.get('admissionDate')).toBe('2025-08-21');
   });

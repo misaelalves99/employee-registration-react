@@ -1,5 +1,3 @@
-// src/components/employee/EmployeeDeleteModal.test.tsx
-
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { EmployeeDeleteModal } from './EmployeeDeleteModal';
 import { Employee } from '../../types/employee';
@@ -26,7 +24,6 @@ describe('EmployeeDeleteModal', () => {
         onDeleted={jest.fn()}
       />
     );
-
     expect(container.firstChild).toBeNull();
   });
 
@@ -56,7 +53,6 @@ describe('EmployeeDeleteModal', () => {
 
   it('chama onClose ao clicar fora do modal ou no botão cancelar', () => {
     const onClose = jest.fn();
-
     const { rerender } = render(
       <EmployeeDeleteModal
         employee={employeeMock}
@@ -65,11 +61,9 @@ describe('EmployeeDeleteModal', () => {
       />
     );
 
-    // Clicar no backdrop
     fireEvent.click(screen.getByText('Confirmar Exclusão').parentElement!.parentElement!);
     expect(onClose).toHaveBeenCalledTimes(1);
 
-    // Re-render para reset
     onClose.mockReset();
     rerender(
       <EmployeeDeleteModal
@@ -79,7 +73,6 @@ describe('EmployeeDeleteModal', () => {
       />
     );
 
-    // Clicar no botão cancelar
     fireEvent.click(screen.getByText('Cancelar'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -87,32 +80,39 @@ describe('EmployeeDeleteModal', () => {
   it('executa exclusão corretamente e chama onDeleted e onClose', async () => {
     const onClose = jest.fn();
     const onDeleted = jest.fn();
+    const deleteMock = jest.fn().mockResolvedValue(undefined);
 
     render(
       <EmployeeDeleteModal
         employee={employeeMock}
         onClose={onClose}
         onDeleted={onDeleted}
+        onDeleteEmployee={deleteMock}
       />
     );
 
     fireEvent.click(screen.getByText('Confirmar Exclusão'));
-
-    // O botão deve mostrar "Deletando..."
     expect(screen.getByText('Deletando...')).toBeInTheDocument();
 
     await waitFor(() => {
+      expect(deleteMock).toHaveBeenCalledWith(employeeMock.id);
       expect(onDeleted).toHaveBeenCalledTimes(1);
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });
 
   it('desabilita botões enquanto loading', async () => {
+    // Tipando explicitamente como função que recebe number e retorna Promise<void>
+    const deleteMock: (id: number) => Promise<void> = jest.fn(
+      () => new Promise<void>((res) => setTimeout(res, 100))
+    );
+
     render(
       <EmployeeDeleteModal
         employee={employeeMock}
         onClose={jest.fn()}
         onDeleted={jest.fn()}
+        onDeleteEmployee={deleteMock}
       />
     );
 
@@ -128,5 +128,31 @@ describe('EmployeeDeleteModal', () => {
       expect(confirmButton).not.toBeDisabled();
       expect(cancelButton).not.toBeDisabled();
     });
+  });
+
+  it('mostra mensagem de erro caso delete falhe', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    const failDeleteMock = jest.fn().mockRejectedValue(new Error('fail'));
+
+    render(
+      <EmployeeDeleteModal
+        employee={employeeMock}
+        onClose={jest.fn()}
+        onDeleted={jest.fn()}
+        onDeleteEmployee={failDeleteMock}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Confirmar Exclusão'));
+
+    await waitFor(() => {
+      expect(failDeleteMock).toHaveBeenCalledWith(employeeMock.id);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalledWith('Erro ao deletar funcionário. Tente novamente.');
+    });
+
+    consoleErrorSpy.mockRestore();
+    alertSpy.mockRestore();
   });
 });

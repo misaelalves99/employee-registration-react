@@ -2,13 +2,12 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DeleteEmployeePage from './DeleteEmployeePage';
-import { getAllMockEmployees, updateMockEmployee } from '../../../lib/mock/employees';
+import { getMockEmployees, deleteMockEmployee } from '../../../lib/mock/mockData';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mocks corretos
-jest.mock('../../../lib/mock/employees', () => ({
-  getAllMockEmployees: jest.fn(),
-  updateMockEmployee: jest.fn(),
+jest.mock('../../../lib/mock/mockData', () => ({
+  getMockEmployees: jest.fn(),
+  deleteMockEmployee: jest.fn(),
 }));
 
 describe('DeleteEmployeePage', () => {
@@ -27,23 +26,12 @@ describe('DeleteEmployeePage', () => {
     isActive: true,
   };
 
-  let locationHref: string;
-
-  beforeAll(() => {
-    // Mock seguro de window.location.href
-    locationHref = '';
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { href: locationHref },
-    });
-  });
-
   beforeEach(() => {
     jest.resetAllMocks();
-    (getAllMockEmployees as jest.Mock).mockReturnValue([employeeMock]);
-    (updateMockEmployee as jest.Mock).mockReturnValue(true);
-    locationHref = '';
-    window.location.href = locationHref;
+    (getMockEmployees as jest.Mock).mockReturnValue([employeeMock]);
+    (deleteMockEmployee as jest.Mock).mockImplementation(() => {});
+    window.confirm = jest.fn();
+    window.location.href = '';
   });
 
   it('mostra loading inicialmente', () => {
@@ -70,7 +58,7 @@ describe('DeleteEmployeePage', () => {
   });
 
   it('exibe erro quando funcionário não é encontrado', async () => {
-    (getAllMockEmployees as jest.Mock).mockReturnValue([]);
+    (getMockEmployees as jest.Mock).mockReturnValue([]);
     render(
       <MemoryRouter>
         <DeleteEmployeePage params={{ id: '999' }} />
@@ -82,8 +70,8 @@ describe('DeleteEmployeePage', () => {
     });
   });
 
-  it('chama updateMockEmployee e redireciona quando confirmado', async () => {
-    window.confirm = jest.fn().mockReturnValue(true);
+  it('chama deleteMockEmployee e redireciona quando confirmado', async () => {
+    (window.confirm as jest.Mock).mockReturnValue(true);
 
     render(
       <MemoryRouter>
@@ -97,12 +85,12 @@ describe('DeleteEmployeePage', () => {
     expect(window.confirm).toHaveBeenCalledWith(
       'Tem certeza que deseja deletar o funcionário João Silva?'
     );
-    expect(updateMockEmployee).toHaveBeenCalledWith(1, { isActive: false });
+    expect(deleteMockEmployee).toHaveBeenCalledWith(1);
     expect(window.location.href).toBe('/employee');
   });
 
   it('não deleta quando cancelado', async () => {
-    window.confirm = jest.fn().mockReturnValue(false);
+    (window.confirm as jest.Mock).mockReturnValue(false);
 
     render(
       <MemoryRouter>
@@ -113,7 +101,7 @@ describe('DeleteEmployeePage', () => {
     await waitFor(() => screen.getByText(/^deletar$/i));
     fireEvent.click(screen.getByText(/^deletar$/i));
 
-    expect(updateMockEmployee).not.toHaveBeenCalled();
+    expect(deleteMockEmployee).not.toHaveBeenCalled();
     expect(window.location.href).toBe('');
   });
 });

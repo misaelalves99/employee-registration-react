@@ -4,9 +4,15 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DetailsEmployeePage from './DetailsEmployeePage';
 import { getEmployeeById } from '../../../lib/mock/employees';
 
-// Mock da função
 jest.mock('../../../lib/mock/employees', () => ({
   getEmployeeById: jest.fn(),
+}));
+
+// Mock do useNavigate
+const mockedNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockedNavigate,
 }));
 
 describe('DetailsEmployeePage', () => {
@@ -25,27 +31,8 @@ describe('DetailsEmployeePage', () => {
     isActive: true,
   };
 
-  let originalLocation: Location;
-
-  beforeAll(() => {
-    originalLocation = window.location;
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { href: '' },
-    });
-  });
-
   beforeEach(() => {
     jest.resetAllMocks();
-    window.location.href = '';
-  });
-
-  afterAll(() => {
-    // Restaurar location original
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: originalLocation,
-    });
   });
 
   it('mostra loading inicialmente', () => {
@@ -81,24 +68,19 @@ describe('DetailsEmployeePage', () => {
     expect(await screen.findByText(/funcionário não encontrado/i)).toBeInTheDocument();
   });
 
-  it('chama window.history.back ao clicar em voltar', async () => {
+  it('chama navigate ao clicar em voltar', async () => {
     (getEmployeeById as jest.Mock).mockReturnValue(null);
-    const backMock = jest.fn();
-    Object.defineProperty(window, 'history', {
-      value: { back: backMock },
-      writable: true,
-    });
 
     render(<DetailsEmployeePage id="999" />);
     fireEvent.click(await screen.findByText(/voltar para a lista/i));
-    expect(backMock).toHaveBeenCalled();
+    expect(mockedNavigate).toHaveBeenCalledWith('/employee');
   });
 
-  it('altera window.location.href ao clicar em editar', async () => {
+  it('chama navigate ao clicar em editar', async () => {
     (getEmployeeById as jest.Mock).mockReturnValue(employeeMock);
 
     render(<DetailsEmployeePage id="1" />);
     fireEvent.click(await screen.findByText(/editar/i));
-    expect(window.location.href).toBe('/employee/1/edit');
+    expect(mockedNavigate).toHaveBeenCalledWith('/employee/edit/1');
   });
 });

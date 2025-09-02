@@ -23,29 +23,39 @@ describe('mockData', () => {
     localStorage.clear();
   });
 
-  it('getMockEmployees deve retornar array vazio se localStorage estiver vazio', () => {
+  it('getMockEmployees retorna array vazio se localStorage estiver vazio', () => {
     expect(getMockEmployees()).toEqual([]);
   });
 
-  it('getMockEmployees deve retornar dados salvos no localStorage', () => {
+  it('getMockEmployees retorna dados salvos no localStorage', () => {
     localStorage.setItem(EMPLOYEE_KEY, JSON.stringify([mockEmployee]));
     const employees = getMockEmployees();
-    expect(employees.length).toBe(1);
-    expect(employees[0].name).toBe('Test Employee');
+    expect(employees).toHaveLength(1);
+    expect(employees[0]).toMatchObject({ id: 1, name: 'Test Employee' });
   });
 
-  it('deleteMockEmployee deve remover funcionário pelo id', () => {
+  it('deleteMockEmployee remove funcionário pelo id', () => {
     localStorage.setItem(EMPLOYEE_KEY, JSON.stringify([mockEmployee]));
     deleteMockEmployee(1);
     const employees = getMockEmployees();
     expect(employees).toEqual([]);
   });
 
-  it('deleteMockEmployee não deve falhar ao remover id inexistente', () => {
+  it('deleteMockEmployee não falha ao remover id inexistente', () => {
     localStorage.setItem(EMPLOYEE_KEY, JSON.stringify([mockEmployee]));
     deleteMockEmployee(999);
     const employees = getMockEmployees();
-    expect(employees.length).toBe(1);
+    expect(employees).toHaveLength(1);
     expect(employees[0].id).toBe(1);
+  });
+
+  it('deleteMockEmployee mantém outros funcionários intactos', () => {
+    const secondEmployee: Employee = { ...mockEmployee, id: 2, name: 'Second' };
+    localStorage.setItem(EMPLOYEE_KEY, JSON.stringify([mockEmployee, secondEmployee]));
+    deleteMockEmployee(1);
+    const employees = getMockEmployees();
+    expect(employees).toHaveLength(1);
+    expect(employees[0].id).toBe(2);
+    expect(employees[0].name).toBe('Second');
   });
 });

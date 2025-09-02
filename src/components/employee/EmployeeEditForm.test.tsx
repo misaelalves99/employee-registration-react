@@ -1,129 +1,102 @@
-// src/components/employee/EmployeeEditForm.tsx
-import { useState, FormEvent, ChangeEvent } from 'react';
-import { Position, PositionFormValue, POSITIONS } from '../../types/position';
+// src/components/employee/EmployeeEditForm.test.tsx
+
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import EmployeeEditForm from './EmployeeEditForm';
 import { Department } from '../../types/department';
-import styles from './EmployeeEditForm.module.css';
+import { POSITIONS } from '../../types/position';
 
-interface EmployeeEditFormProps {
-  employee: {
-    id: number;
-    name: string;
-    cpf: string;
-    email: string;
-    phone?: string;
-    address?: string;
-    position: Position;
-    departmentId: number;
-    salary: number;
-    admissionDate: string;
-  };
-  departments: Department[];
-  onUpdate: (data: FormData) => Promise<void>;
-}
+const employeeMock = {
+  id: 1,
+  name: 'João Silva',
+  cpf: '123.456.789-00',
+  email: 'joao@example.com',
+  phone: '1111-1111',
+  address: 'Rua A, 123',
+  position: POSITIONS[0],
+  departmentId: 2,
+  salary: 5500,
+  admissionDate: '2022-01-15',
+};
 
-export default function EmployeeEditForm({
-  employee,
-  departments,
-  onUpdate,
-}: EmployeeEditFormProps) {
-  const [form, setForm] = useState({
-    name: employee.name,
-    cpf: employee.cpf,
-    email: employee.email,
-    phone: employee.phone ?? '',
-    address: employee.address ?? '',
-    position: employee.position as PositionFormValue, // ✅ usa PositionFormValue
-    departmentId: employee.departmentId.toString(),
-    salary: employee.salary.toString(),
-    admissionDate: employee.admissionDate.slice(0, 10),
+const departmentsMock: Department[] = [
+  { id: 1, name: 'RH' },
+  { id: 2, name: 'TI' },
+];
+
+describe('EmployeeEditForm', () => {
+  let onUpdateMock: jest.Mock;
+
+  beforeEach(() => {
+    onUpdateMock = jest.fn().mockResolvedValue(undefined);
+    render(
+      <EmployeeEditForm
+        employee={employeeMock}
+        departments={departmentsMock}
+        onUpdate={onUpdateMock}
+      />
+    );
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  it('renderiza todos os campos com valores do funcionário', () => {
+    expect(screen.getByLabelText(/name/i)).toHaveValue(employeeMock.name);
+    expect(screen.getByLabelText(/cpf/i)).toHaveValue(employeeMock.cpf);
+    expect(screen.getByLabelText(/email/i)).toHaveValue(employeeMock.email);
+    expect(screen.getByLabelText(/phone/i)).toHaveValue(employeeMock.phone);
+    expect(screen.getByLabelText(/address/i)).toHaveValue(employeeMock.address);
+    expect(screen.getByLabelText(/salary/i)).toHaveValue(employeeMock.salary.toString());
+    expect(screen.getByLabelText(/admissionDate/i)).toHaveValue(employeeMock.admissionDate);
+    expect(screen.getByLabelText(/Cargo/i)).toHaveValue(employeeMock.position);
+    expect(screen.getByLabelText(/Departamento/i)).toHaveValue(employeeMock.departmentId.toString());
+  });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  it('mostra erros de validação ao submeter campos vazios', async () => {
+    // Limpar campos obrigatórios
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/cpf/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/Cargo/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/Departamento/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/salary/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/admissionDate/i), { target: { value: '' } });
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+    fireEvent.click(screen.getByRole('button', { name: /Salvar/i }));
 
-    const newErrors: Record<string, string> = {};
-    if (!form.name) newErrors.name = 'Nome é obrigatório.';
-    if (!form.cpf) newErrors.cpf = 'CPF é obrigatório.';
-    if (!form.email) newErrors.email = 'Email é obrigatório.';
-    if (!form.position) newErrors.position = 'Cargo é obrigatório.'; // ✅ pode ser ""
-    if (!form.departmentId || form.departmentId === '0') newErrors.departmentId = 'Departamento é obrigatório.';
-    if (!form.salary || isNaN(Number(form.salary))) newErrors.salary = 'Salário inválido.';
-    if (!form.admissionDate) newErrors.admissionDate = 'Data de admissão é obrigatória.';
+    expect(await screen.findByText('Nome é obrigatório.')).toBeInTheDocument();
+    expect(screen.getByText('CPF é obrigatório.')).toBeInTheDocument();
+    expect(screen.getByText('Email é obrigatório.')).toBeInTheDocument();
+    expect(screen.getByText('Cargo é obrigatório.')).toBeInTheDocument();
+    expect(screen.getByText('Departamento é obrigatório.')).toBeInTheDocument();
+    expect(screen.getByText('Salário inválido.')).toBeInTheDocument();
+    expect(screen.getByText('Data de admissão é obrigatória.')).toBeInTheDocument();
+    expect(onUpdateMock).not.toHaveBeenCalled();
+  });
 
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+  it('submete formulário válido chamando onUpdate com FormData', async () => {
+    // Alterar alguns valores
+    userEvent.clear(screen.getByLabelText(/name/i));
+    userEvent.type(screen.getByLabelText(/name/i), 'Maria Oliveira');
 
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      formData.append(key, value ?? '');
+    userEvent.selectOptions(screen.getByLabelText(/Cargo/i), POSITIONS[1]);
+    userEvent.selectOptions(screen.getByLabelText(/Departamento/i), departmentsMock[0].id.toString());
+
+    fireEvent.click(screen.getByRole('button', { name: /Salvar/i }));
+
+    await waitFor(() => {
+      expect(onUpdateMock).toHaveBeenCalledTimes(1);
     });
 
-    await onUpdate(formData);
-  };
+    const formDataArg = onUpdateMock.mock.calls[0][0] as FormData;
+    expect(formDataArg.get('name')).toBe('Maria Oliveira');
+    expect(formDataArg.get('position')).toBe(POSITIONS[1]);
+    expect(formDataArg.get('departmentId')).toBe(departmentsMock[0].id.toString());
+  });
 
-  return (
-    <form onSubmit={handleSubmit} className={styles.container}>
-      <h1 className={styles.title}>Editar Funcionário</h1>
+  it('mostra erro ao fornecer salário inválido', async () => {
+    fireEvent.change(screen.getByLabelText(/salary/i), { target: { value: 'abc' } });
+    fireEvent.click(screen.getByRole('button', { name: /Salvar/i }));
 
-      {/* Campos de input */}
-      {['name', 'cpf', 'email', 'phone', 'address', 'salary', 'admissionDate'].map((field) => (
-        <div key={field} className={styles.formGroup}>
-          <label htmlFor={field} className={styles.label}>{field}</label>
-          <input
-            id={field}
-            name={field}
-            type={field === 'salary' ? 'number' : field === 'admissionDate' ? 'date' : 'text'}
-            value={form[field as keyof typeof form]}
-            onChange={handleChange}
-            className={styles.input}
-          />
-          {errors[field] && <small className={styles.errorText}>{errors[field]}</small>}
-        </div>
-      ))}
-
-      {/* Cargo */}
-      <div className={styles.formGroup}>
-        <label htmlFor="position" className={styles.label}>Cargo</label>
-        <select
-          id="position"
-          name="position"
-          className={styles.select}
-          value={form.position}
-          onChange={handleChange}
-        >
-          <option value="">Selecione</option>
-          {POSITIONS.map(pos => (
-            <option key={pos} value={pos}>{pos}</option>
-          ))}
-        </select>
-        {errors.position && <small className={styles.errorText}>{errors.position}</small>}
-      </div>
-
-      {/* Departamento */}
-      <div className={styles.formGroup}>
-        <label htmlFor="departmentId" className={styles.label}>Departamento</label>
-        <select
-          id="departmentId"
-          name="departmentId"
-          className={styles.select}
-          value={form.departmentId}
-          onChange={handleChange}
-        >
-          <option value="">Selecione</option>
-          {departments.map(d => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-        {errors.departmentId && <small className={styles.errorText}>{errors.departmentId}</small>}
-      </div>
-
-      <button type="submit" className={styles.button}>Salvar</button>
-    </form>
-  );
-}
+    expect(await screen.findByText('Salário inválido.')).toBeInTheDocument();
+    expect(onUpdateMock).not.toHaveBeenCalled();
+  });
+});

@@ -1,18 +1,19 @@
 // src/components/employee/EmployeeToggleStatusButton.test.tsx
-
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { EmployeeToggleStatusButton } from './EmployeeToggleStatusButton';
-import { http, HttpResponse } from 'msw';
+import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 
 const employeeId = 1;
 const onToggleMock = jest.fn();
 
+// Configuração do servidor MSW
 const server = setupServer(
-  http.post('/api/employee/inactivate/:id', () => HttpResponse.json({}, { status: 200 })),
-  http.post('/api/employee/reactivate/:id', () => HttpResponse.json({}, { status: 200 }))
+  rest.post('/api/employee/inactivate/:id', (req, res, ctx) => res(ctx.status(200))),
+  rest.post('/api/employee/reactivate/:id', (req, res, ctx) => res(ctx.status(200)))
 );
 
+// Ciclo de vida do servidor
 beforeAll(() => server.listen());
 afterEach(() => {
   server.resetHandlers();
@@ -21,6 +22,15 @@ afterEach(() => {
 afterAll(() => server.close());
 
 describe('EmployeeToggleStatusButton', () => {
+  let alertMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    alertMock = jest.spyOn(window, 'alert').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    alertMock.mockRestore();
+  });
+
   it('renderiza corretamente como ativo ou inativo', () => {
     const { rerender } = render(
       <EmployeeToggleStatusButton employeeId={employeeId} isActive={true} onToggle={onToggleMock} />
@@ -58,19 +68,16 @@ describe('EmployeeToggleStatusButton', () => {
   });
 
   it('mostra alerta em caso de erro na API', async () => {
-    jest.spyOn(window, 'alert').mockImplementation(() => {});
-
     server.use(
-      http.post('/api/employee/inactivate/:id', () => HttpResponse.json({}, { status: 500 }))
+      rest.post('/api/employee/inactivate/:id', (req, res, ctx) => res(ctx.status(500)))
     );
 
     render(<EmployeeToggleStatusButton employeeId={employeeId} isActive={true} onToggle={onToggleMock} />);
 
     fireEvent.click(screen.getByRole('button'));
 
-    await waitFor(() => expect(window.alert).toHaveBeenCalledWith('Erro ao atualizar status.'));
+    await waitFor(() => expect(alertMock).toHaveBeenCalledWith('Erro ao atualizar status.'));
     expect(onToggleMock).not.toHaveBeenCalled();
-
-    (window.alert as jest.Mock).mockRestore();
+    expect(screen.getByRole('button')).not.toBeDisabled();
   });
 });

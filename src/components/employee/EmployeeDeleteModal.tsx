@@ -8,14 +8,13 @@ interface EmployeeDeleteModalProps {
   employee: Employee | null;
   onClose: () => void;
   onDeleted: () => void;
+  onDeleteEmployee?: (id: number) => Promise<void>;
 }
 
 const deleteEmployeeMock = async (id: number) => {
   return new Promise((resolve) => {
     console.log('Simulando exclusão do funcionário com ID:', id);
-    setTimeout(() => {
-      resolve(true);
-    }, 1000);
+    setTimeout(() => resolve(true), 1000);
   });
 };
 
@@ -23,6 +22,7 @@ export function EmployeeDeleteModal({
   employee,
   onClose,
   onDeleted,
+  onDeleteEmployee,
 }: EmployeeDeleteModalProps) {
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +31,11 @@ export function EmployeeDeleteModal({
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await deleteEmployeeMock(employee.id);
+      if (onDeleteEmployee) {
+        await onDeleteEmployee(employee.id);
+      } else {
+        await deleteEmployeeMock(employee.id);
+      }
       onDeleted();
       onClose();
     } catch (error) {
