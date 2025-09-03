@@ -1,4 +1,5 @@
 // src/components/employee/toggle-status-button/ToggleStatusButton.test.tsx
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ToggleStatusButton } from './ToggleStatusButton';
 import { rest } from 'msw';
@@ -7,8 +8,9 @@ import { setupServer } from 'msw/node';
 const employeeId = 1;
 const onStatusChangeMock = jest.fn();
 
+// Servidor MSW
 const server = setupServer(
-  rest.post(`/api/employees/${employeeId}/toggle-status`, (req, res, ctx) => {
+  rest.post(`/api/employees/${employeeId}/toggle-status`, (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json({ isActive: false }));
   })
 );
@@ -79,7 +81,7 @@ describe('ToggleStatusButton', () => {
 
   it('mostra alerta em caso de erro na API', async () => {
     server.use(
-      rest.post(`/api/employees/${employeeId}/toggle-status`, (req, res, ctx) => {
+      rest.post(`/api/employees/${employeeId}/toggle-status`, (_req, res, ctx) => {
         return res(ctx.status(500));
       })
     );

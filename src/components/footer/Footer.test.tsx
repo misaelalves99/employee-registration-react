@@ -8,7 +8,7 @@ describe('Footer', () => {
     render(<Footer />);
 
     // Verifica se o footer está presente
-    const footer = screen.getByRole('contentinfo'); // <footer> tem role="contentinfo"
+    const footer = screen.getByRole('contentinfo');
     expect(footer).toBeInTheDocument();
 
     // Verifica o texto dinâmico com o ano atual
