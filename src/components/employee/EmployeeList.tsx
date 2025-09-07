@@ -1,16 +1,22 @@
 // src/components/employee/EmployeeList.tsx
 
-import { Employee } from '../../types/employee';
-import styles from './EmployeeList.module.css';
 import { Link } from 'react-router-dom';
+import styles from './EmployeeList.module.css';
+import { useEmployee } from '../../hooks/useEmployee';
 
-interface EmployeeListProps {
-  employees: Employee[];
-  onDelete: (employee: Employee) => void;
-  onToggleStatus?: (employee: Employee) => void; // opcional, melhor que usar <form>
-}
+export function EmployeeList() {
+  const { employees, deleteEmployee, updateEmployee } = useEmployee();
 
-export default function EmployeeList({ employees, onDelete, onToggleStatus }: EmployeeListProps) {
+  const handleDelete = (id: number) => {
+    if (window.confirm('Tem certeza que deseja deletar este funcionário?')) {
+      deleteEmployee(id);
+    }
+  };
+
+  const handleToggleStatus = (id: number, isActive: boolean) => {
+    updateEmployee(id, { isActive: !isActive });
+  };
+
   return (
     <table className={styles.table}>
       <thead className={styles.thead}>
@@ -47,26 +53,30 @@ export default function EmployeeList({ employees, onDelete, onToggleStatus }: Em
             </td>
             <td className={styles.td}>{emp.isActive ? 'Ativo' : 'Inativo'}</td>
             <td className={`${styles.td} ${styles.actions}`}>
-              <Link to={`/employee/details/${emp.id}`} className={`${styles.btn} ${styles.btnInfo}`}>
+              <Link
+                to={`/employee/details/${emp.id}`}
+                className={`${styles.btn} ${styles.btnInfo}`}
+              >
                 Detalhes
               </Link>
-              <Link to={`/employee/edit/${emp.id}`} className={`${styles.btn} ${styles.btnWarning}`}>
+              <Link
+                to={`/employee/edit/${emp.id}`}
+                className={`${styles.btn} ${styles.btnWarning}`}
+              >
                 Editar
               </Link>
 
-              {onToggleStatus && (
-                <button
-                  type="button"
-                  className={`${styles.btn} ${emp.isActive ? styles.btnSecondary : styles.btnSuccess}`}
-                  onClick={() => onToggleStatus(emp)}
-                  title={emp.isActive ? 'Inativar' : 'Ativar'}
-                >
-                  {emp.isActive ? 'Inativar' : 'Ativar'}
-                </button>
-              )}
+              <button
+                type="button"
+                className={`${styles.btn} ${emp.isActive ? styles.btnSecondary : styles.btnSuccess}`}
+                onClick={() => handleToggleStatus(emp.id, emp.isActive)}
+                title={emp.isActive ? 'Inativar' : 'Ativar'}
+              >
+                {emp.isActive ? 'Inativar' : 'Ativar'}
+              </button>
 
               <button
-                onClick={() => onDelete(emp)}
+                onClick={() => handleDelete(emp.id)}
                 className={`${styles.btn} ${styles.btnDanger}`}
                 title="Deletar"
               >

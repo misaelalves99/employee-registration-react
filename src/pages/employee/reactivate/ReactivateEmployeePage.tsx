@@ -2,29 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Employee } from '../../../types/employee';
-import { getEmployeeById, updateMockEmployee } from '../../../lib/mock/employees';
+import { useEmployee } from '../../../hooks/useEmployee';
 import styles from './ReactivateEmployeePage.module.css';
 
 export default function EmployeeReactivatePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { employees, updateEmployee } = useEmployee();
 
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [employee, setEmployee] = useState(employees.find(emp => emp.id === Number(id)) || null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reactivating, setReactivating] = useState(false);
 
   useEffect(() => {
-    const empId = parseInt(id || '');
-    const found = getEmployeeById(empId);
+    const empId = Number(id);
+    if (isNaN(empId)) {
+      setError('Funcionário inválido.');
+      setLoading(false);
+      return;
+    }
+
+    const found = employees.find(emp => emp.id === empId);
     if (!found) {
       setError('Funcionário não encontrado.');
     } else {
       setEmployee(found);
     }
     setLoading(false);
-  }, [id]);
+  }, [id, employees]);
 
   const handleReactivate = () => {
     if (!employee) return;
@@ -32,28 +38,18 @@ export default function EmployeeReactivatePage() {
     setReactivating(true);
     setError(null);
 
-    setTimeout(() => {
-      const success = updateMockEmployee(employee.id, { isActive: true });
-      if (success) {
-        navigate('/employee');
-      } else {
-        setError('Erro ao reativar funcionário.');
-        setReactivating(false);
-      }
-    }, 1000);
+    const success = updateEmployee(employee.id, { ...employee, isActive: true });
+    if (success) {
+      navigate('/employee');
+    } else {
+      setError('Erro ao reativar funcionário.');
+      setReactivating(false);
+    }
   };
 
-  if (loading) {
-    return <p className={styles.container}>Carregando...</p>;
-  }
-
-  if (error) {
-    return <p className={`${styles.container} ${styles.errorText}`}>{error}</p>;
-  }
-
-  if (!employee) {
-    return <p className={styles.container}>Funcionário não encontrado.</p>;
-  }
+  if (loading) return <p className={styles.container}>Carregando...</p>;
+  if (error) return <p className={`${styles.container} ${styles.errorText}`}>{error}</p>;
+  if (!employee) return <p className={styles.container}>Funcionário não encontrado.</p>;
 
   return (
     <div className={styles.container}>

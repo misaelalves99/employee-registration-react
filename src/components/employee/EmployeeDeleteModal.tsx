@@ -3,27 +3,16 @@
 import { useState } from 'react';
 import styles from './EmployeeDeleteModal.module.css';
 import { Employee } from '../../types/employee';
+import { useEmployee } from '../../hooks/useEmployee';
 
 interface EmployeeDeleteModalProps {
   employee: Employee | null;
   onClose: () => void;
-  onDeleted: () => void;
-  onDeleteEmployee?: (id: number) => Promise<void>;
+  onDeleted?: () => void; // opcional
 }
 
-const deleteEmployeeMock = async (id: number) => {
-  return new Promise((resolve) => {
-    console.log('Simulando exclusão do funcionário com ID:', id);
-    setTimeout(() => resolve(true), 1000);
-  });
-};
-
-export function EmployeeDeleteModal({
-  employee,
-  onClose,
-  onDeleted,
-  onDeleteEmployee,
-}: EmployeeDeleteModalProps) {
+export function EmployeeDeleteModal({ employee, onClose, onDeleted }: EmployeeDeleteModalProps) {
+  const { deleteEmployee } = useEmployee();
   const [loading, setLoading] = useState(false);
 
   if (!employee) return null;
@@ -31,15 +20,15 @@ export function EmployeeDeleteModal({
   const handleDelete = async () => {
     setLoading(true);
     try {
-      if (onDeleteEmployee) {
-        await onDeleteEmployee(employee.id);
+      const success = deleteEmployee(employee.id);
+      if (success) {
+        if (onDeleted) onDeleted();
+        onClose();
       } else {
-        await deleteEmployeeMock(employee.id);
+        alert('Erro ao deletar funcionário. Tente novamente.');
       }
-      onDeleted();
-      onClose();
     } catch (error) {
-      console.error('Erro ao deletar funcionário (mock):', error);
+      console.error('Erro ao deletar funcionário:', error);
       alert('Erro ao deletar funcionário. Tente novamente.');
     } finally {
       setLoading(false);

@@ -1,33 +1,34 @@
-// src/components/employee/create/CreateEmployeePage.tsx
+// src/pages/employee/create/CreateEmployeePage.tsx
 
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Department } from '../../../types/department'
-import { Position } from '../../../types/position'
-import { createMockEmployee } from '../../../lib/mock/employees'
-import { getMockDepartments } from '../../../lib/mock/departments'
-import { getMockPositions } from '../../../lib/mock/positions'
-import styles from './CreateEmployeePage.module.css'
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Department } from '../../../types/department';
+import { Position } from '../../../types/position';
+import { getMockDepartments } from '../../../lib/mock/departments';
+import { getMockPositions } from '../../../lib/mock/positions';
+import { useEmployee } from '../../../hooks/useEmployee';
+import styles from './CreateEmployeePage.module.css';
 
 interface EmployeeFormData {
-  name: string
-  cpf: string
-  email: string
-  phone: string
-  address: string
-  salary: string
-  admissionDate: string
-  isActive: boolean
-  departmentId: string
-  position: Position | ''
+  name: string;
+  cpf: string;
+  email: string;
+  phone: string;
+  address: string;
+  salary: string;
+  admissionDate: string;
+  isActive: boolean;
+  departmentId: string;
+  position: Position | '';
 }
 
 export default function CreateEmployeePage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { addEmployee } = useEmployee(); // hook do contexto
 
-  const [departments, setDepartments] = useState<Department[]>([])
-  const [positions, setPositions] = useState<Position[]>([])
-  const [loading, setLoading] = useState(true)
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState<EmployeeFormData>({
     name: '',
@@ -40,31 +41,28 @@ export default function CreateEmployeePage() {
     isActive: true,
     departmentId: '',
     position: '',
-  })
+  });
 
   useEffect(() => {
     async function fetchData() {
-      const [deps, pos] = await Promise.all([
-        getMockDepartments(),
-        getMockPositions(),
-      ])
-      setDepartments(deps)
-      setPositions(pos)
-      setLoading(false)
+      const [deps, pos] = await Promise.all([getMockDepartments(), getMockPositions()]);
+      setDepartments(deps);
+      setPositions(pos);
+      setLoading(false);
     }
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value, type } = e.target
-    const newValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    setFormData((prev) => ({ ...prev, [name]: newValue }))
-  }
+    const { name, value, type } = e.target;
+    const newValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (
       !formData.name.trim() ||
@@ -75,12 +73,12 @@ export default function CreateEmployeePage() {
       formData.position === '' ||
       !formData.admissionDate.trim()
     ) {
-      alert('Por favor, preencha todos os campos obrigatórios.')
-      return
+      alert('Por favor, preencha todos os campos obrigatórios.');
+      return;
     }
 
-    await createMockEmployee({
-      id: Date.now(),
+    // Usando contexto para adicionar funcionário
+    addEmployee({
       name: formData.name.trim(),
       cpf: formData.cpf.trim(),
       email: formData.email.trim(),
@@ -92,19 +90,25 @@ export default function CreateEmployeePage() {
       departmentId: parseInt(formData.departmentId),
       department: departments.find((d) => d.id === parseInt(formData.departmentId)),
       isActive: formData.isActive,
-    })
+    });
 
-    navigate('/employee')
-  }
+    navigate('/employee');
+  };
 
-  if (loading) return <p className={styles.loading}>Carregando...</p>
+  if (loading) return <p className={styles.loading}>Carregando...</p>;
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Criar Funcionário</h1>
 
       <form onSubmit={handleSubmit} className={styles.form}>
-        {[['name', 'Nome'], ['cpf', 'CPF'], ['email', 'Email'], ['phone', 'Telefone'], ['address', 'Endereço']].map(([key, label]) => (
+        {[
+          ['name', 'Nome'],
+          ['cpf', 'CPF'],
+          ['email', 'Email'],
+          ['phone', 'Telefone'],
+          ['address', 'Endereço'],
+        ].map(([key, label]) => (
           <div className={styles.field} key={key}>
             <label htmlFor={key} className={styles.label}>
               {label}:
@@ -122,7 +126,9 @@ export default function CreateEmployeePage() {
         ))}
 
         <div className={styles.field}>
-          <label htmlFor="salary" className={styles.label}>Salário:</label>
+          <label htmlFor="salary" className={styles.label}>
+            Salário:
+          </label>
           <input
             type="number"
             id="salary"
@@ -136,7 +142,9 @@ export default function CreateEmployeePage() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="admissionDate" className={styles.label}>Data de Admissão:</label>
+          <label htmlFor="admissionDate" className={styles.label}>
+            Data de Admissão:
+          </label>
           <input
             type="date"
             id="admissionDate"
@@ -149,7 +157,9 @@ export default function CreateEmployeePage() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="departmentId" className={styles.label}>Departamento:</label>
+          <label htmlFor="departmentId" className={styles.label}>
+            Departamento:
+          </label>
           <select
             id="departmentId"
             name="departmentId"
@@ -160,13 +170,17 @@ export default function CreateEmployeePage() {
           >
             <option value="">Selecione...</option>
             {departments.map((d) => (
-              <option key={d.id} value={d.id.toString()}>{d.name}</option>
+              <option key={d.id} value={d.id.toString()}>
+                {d.name}
+              </option>
             ))}
           </select>
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="position" className={styles.label}>Cargo:</label>
+          <label htmlFor="position" className={styles.label}>
+            Cargo:
+          </label>
           <select
             id="position"
             name="position"
@@ -177,7 +191,9 @@ export default function CreateEmployeePage() {
           >
             <option value="">Selecione...</option>
             {positions.map((p) => (
-              <option key={p} value={p}>{p}</option>
+              <option key={p} value={p}>
+                {p}
+              </option>
             ))}
           </select>
         </div>
@@ -194,9 +210,10 @@ export default function CreateEmployeePage() {
           <label htmlFor="isActive">Ativo</label>
         </div>
 
-        <button type="submit" className={styles.button}>Criar Funcionário</button>
-        
-        {/* Botão Voltar */}
+        <button type="submit" className={styles.button}>
+          Criar Funcionário
+        </button>
+
         <button
           type="button"
           className={`${styles.button} ${styles.backButton}`}
@@ -206,5 +223,5 @@ export default function CreateEmployeePage() {
         </button>
       </form>
     </div>
-  )
+  );
 }

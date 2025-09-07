@@ -1,25 +1,16 @@
 // src/components/employee/EmployeeEditForm.tsx
 
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, ChangeEvent, FormEvent } from 'react';
 import { Position, POSITIONS } from '../../types/position';
 import { Department } from '../../types/department';
 import styles from './EmployeeEditForm.module.css';
+import { useEmployee } from '../../hooks/useEmployee';
+import { Employee } from '../../types/employee';
 
 interface EmployeeEditFormProps {
-  employee: {
-    id: number;
-    name: string;
-    cpf: string;
-    email: string;
-    phone?: string;
-    address?: string;
-    position: Position;
-    departmentId: number;
-    salary: number;
-    admissionDate: string;
-  };
+  employee: Employee;
   departments: Department[];
-  onUpdate: (data: FormData) => Promise<void>;
+  onUpdated?: () => void;
 }
 
 // Permitir string vazia no select de position
@@ -35,11 +26,9 @@ type EmployeeFormState = {
   admissionDate: string;
 };
 
-export default function EmployeeEditForm({
-  employee,
-  departments,
-  onUpdate,
-}: EmployeeEditFormProps) {
+export default function EmployeeEditForm({ employee, departments, onUpdated }: EmployeeEditFormProps) {
+  const { updateEmployee } = useEmployee();
+
   const [form, setForm] = useState<EmployeeFormState>({
     name: employee.name,
     cpf: employee.cpf,
@@ -47,12 +36,13 @@ export default function EmployeeEditForm({
     phone: employee.phone ?? '',
     address: employee.address ?? '',
     position: employee.position ?? '',
-    departmentId: employee.departmentId.toString(),
+    departmentId: employee.departmentId?.toString() ?? '',
     salary: employee.salary.toString(),
     admissionDate: employee.admissionDate.slice(0, 10),
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -67,19 +57,34 @@ export default function EmployeeEditForm({
     if (!form.cpf) newErrors.cpf = 'CPF é obrigatório.';
     if (!form.email) newErrors.email = 'Email é obrigatório.';
     if (!form.position) newErrors.position = 'Cargo é obrigatório.';
-    if (!form.departmentId || form.departmentId === '0') newErrors.departmentId = 'Departamento é obrigatório.';
+    if (!form.departmentId) newErrors.departmentId = 'Departamento é obrigatório.';
     if (!form.salary || isNaN(Number(form.salary))) newErrors.salary = 'Salário inválido.';
     if (!form.admissionDate) newErrors.admissionDate = 'Data de admissão é obrigatória.';
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      formData.append(key, value ?? '');
-    });
+    setLoading(true);
+    try {
+      const success = updateEmployee(employee.id, {
+        name: form.name,
+        cpf: form.cpf,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+        position: form.position as Position,
+        departmentId: Number(form.departmentId),
+        salary: parseFloat(form.salary),
+        admissionDate: form.admissionDate,
+      });
 
-    await onUpdate(formData);
+      if (success && onUpdated) onUpdated();
+    } catch (err) {
+      console.error('Erro ao atualizar funcionário:', err);
+      alert('Erro ao atualizar funcionário. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,9 +125,7 @@ export default function EmployeeEditForm({
         >
           <option value="">Selecione</option>
           {POSITIONS.map((pos) => (
-            <option key={pos} value={pos}>
-              {pos}
-            </option>
+            <option key={pos} value={pos}>{pos}</option>
           ))}
         </select>
         {errors.position && <small className={styles.errorText}>{errors.position}</small>}
@@ -145,7 +148,9 @@ export default function EmployeeEditForm({
         {errors.departmentId && <small className={styles.errorText}>{errors.departmentId}</small>}
       </div>
 
-      <button type="submit" className={styles.button}>Salvar</button>
+      <button type="submit" className={styles.button} disabled={loading}>
+        {loading ? 'Atualizando...' : 'Salvar'}
+      </button>
     </form>
   );
 }

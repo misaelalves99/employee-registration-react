@@ -3,16 +3,18 @@
 import { useState } from 'react';
 import styles from './ToggleStatusButton.module.css';
 
-interface ToggleStatusButtonProps {
+export interface ToggleStatusButtonProps {
   employeeId: number;
   initialStatus: boolean;
   onStatusChange: (newStatus: boolean) => void;
+  onToggleStatus?: (id: number, newStatus: boolean) => Promise<void>; // opcional, para injeção de API
 }
 
 export function ToggleStatusButton({
   employeeId,
   initialStatus,
   onStatusChange,
+  onToggleStatus,
 }: ToggleStatusButtonProps) {
   const [isActive, setIsActive] = useState(initialStatus);
   const [loading, setLoading] = useState(false);
@@ -20,17 +22,20 @@ export function ToggleStatusButton({
   const toggleStatus = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/employees/${employeeId}/toggle-status`, {
-        method: 'POST',
-      });
+      if (onToggleStatus) {
+        await onToggleStatus(employeeId, !isActive);
+      } else {
+        // fallback mock
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        console.log(`Simulando toggle status do funcionário ${employeeId}`);
+      }
 
-      if (!res.ok) throw new Error('Erro ao alterar status');
-
-      const data = await res.json();
-      setIsActive(data.isActive);
-      onStatusChange(data.isActive);
+      const newStatus = !isActive;
+      setIsActive(newStatus);
+      onStatusChange(newStatus);
     } catch (error) {
-      alert((error as Error).message);
+      console.error(error);
+      alert('Erro ao atualizar status do funcionário.');
     } finally {
       setLoading(false);
     }

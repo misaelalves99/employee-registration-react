@@ -1,6 +1,6 @@
 // src/components/employee/FilterPanel.tsx
 
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import styles from './FilterPanel.module.css';
 
 export interface FilterPanelProps {
@@ -13,9 +13,21 @@ export function FilterPanel({ onFilterChange }: FilterPanelProps) {
 
   const handleFilter = () => {
     onFilterChange({
-      position: position || undefined,
-      departmentId: departmentId ? Number(departmentId) : undefined,
+      position: position.trim() || undefined,
+      departmentId: departmentId.trim() ? Number(departmentId) : undefined,
     });
+  };
+
+  const handlePositionChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setPosition(e.target.value);
+  };
+
+  const handleDepartmentChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // Permite apenas números ou string vazia
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+      setDepartmentId(value);
+    }
   };
 
   return (
@@ -28,7 +40,7 @@ export function FilterPanel({ onFilterChange }: FilterPanelProps) {
           type="text"
           id="position"
           value={position}
-          onChange={(e) => setPosition(e.target.value)}
+          onChange={handlePositionChange}
           className={styles.input}
           placeholder="Cargo"
         />
@@ -40,7 +52,7 @@ export function FilterPanel({ onFilterChange }: FilterPanelProps) {
           type="number"
           id="departmentId"
           value={departmentId}
-          onChange={(e) => setDepartmentId(e.target.value)}
+          onChange={handleDepartmentChange}
           className={styles.input}
           placeholder="ID do departamento"
         />

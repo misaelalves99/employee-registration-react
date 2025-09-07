@@ -1,8 +1,8 @@
 // src/lib/mock/employees.ts
 
-import { Employee } from '../../types/employee';
-import { Position } from '../../types/position';
-import { mockDepartments } from './departments';
+import { Employee } from '../../types/employee'
+import { Position } from '../../types/position'
+import { mockDepartments } from './departments'
 
 export const mockEmployees: Employee[] = [
   {
@@ -33,13 +33,13 @@ export const mockEmployees: Employee[] = [
     admissionDate: '2021-10-20',
     isActive: true,
   },
-];
+]
 
 /**
  * Retorna funcionário pelo ID
  */
 export function getEmployeeById(id: number): Employee | null {
-  return mockEmployees.find((e) => e.id === id) ?? null;
+  return mockEmployees.find((e) => e.id === id) ?? null
 }
 
 /**
@@ -51,36 +51,61 @@ export function getAllMockEmployees() {
     departmentName: e.department?.name ?? null,
     hiredDate: e.admissionDate,
     active: e.isActive,
-  }));
+  }))
 }
 
 /**
  * Atualiza funcionário
  */
-export function updateMockEmployee(id: number, data: Partial<Employee>): boolean {
-  const index = mockEmployees.findIndex((e) => e.id === id);
-  if (index === -1) return false;
+export function updateMockEmployee(
+  id: number,
+  data: Partial<Omit<Employee, 'id'>>
+): boolean {
+  const index = mockEmployees.findIndex((e) => e.id === id)
+  if (index === -1) return false
 
   const dept = data.departmentId
     ? mockDepartments.find((d) => d.id === data.departmentId)
-    : mockEmployees[index].department;
+    : mockEmployees[index].department
 
   mockEmployees[index] = {
     ...mockEmployees[index],
     ...data,
     department: dept ?? mockEmployees[index].department,
-  };
+  }
 
-  return true;
+  return true
 }
 
 /**
- * Cria novo funcionário
+ * Cria novo funcionário com ID incremental
  */
-export function createMockEmployee(employee: Employee): void {
-  const dept = mockDepartments.find((d) => d.id === employee.departmentId) ?? null;
-  mockEmployees.push({
+export function createMockEmployee(employee: Omit<Employee, 'id'>): Employee {
+  const nextId =
+    mockEmployees.length > 0
+      ? Math.max(...mockEmployees.map((e) => e.id)) + 1
+      : 1
+
+  const dept =
+    mockDepartments.find((d) => d.id === employee.departmentId) ?? null
+
+  const newEmployee: Employee = {
     ...employee,
+    id: nextId,
     department: dept,
-  });
+  }
+
+  mockEmployees.push(newEmployee)
+  return newEmployee
+}
+
+/**
+ * Remove funcionário pelo ID
+ */
+export function deleteMockEmployee(id: number): boolean {
+  const index = mockEmployees.findIndex((e) => e.id === id)
+  if (index === -1) return false
+
+  mockEmployees.splice(index, 1)
+  return true
 }

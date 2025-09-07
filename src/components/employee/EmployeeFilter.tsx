@@ -1,41 +1,32 @@
-// app/components/employee/EmployeeFilter.tsx
+// src/components/employee/EmployeeFilter.tsx
 
-'use client';
-
-import { useState, FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { POSITIONS, Position } from '../../types/position';
 import styles from './EmployeeFilter.module.css';
+import { EmployeeFilters } from '../../pages/employee/EmployeePage';
 
 interface EmployeeFilterProps {
-  onFilterChange: (filters: {
-    search?: string;
-    departmentId?: number;
-    position?: Position | '';
-    isActive?: boolean;
-    admissionDateFrom?: string;
-    admissionDateTo?: string;
-  }) => void;
+  onFilterChange?: (filters: EmployeeFilters) => void;
 }
 
-export default function EmployeeFilter({ onFilterChange }: EmployeeFilterProps) {
+export function EmployeeFilter({ onFilterChange }: EmployeeFilterProps) {
   const [search, setSearch] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [position, setPosition] = useState<Position | ''>('');
   const [isActive, setIsActive] = useState<boolean | ''>('');
-  const [admissionDateFrom, setAdmissionDateFrom] = useState('');
-  const [admissionDateTo, setAdmissionDateTo] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const normalizedIsActive = isActive === '' ? undefined : isActive;
-    onFilterChange({
+  // Sempre que qualquer filtro mudar, avisamos o parent
+  useEffect(() => {
+    onFilterChange?.({
       search: search || undefined,
       departmentId: departmentId ? Number(departmentId) : undefined,
       position: position || undefined,
-      isActive: normalizedIsActive,
-      admissionDateFrom: admissionDateFrom || undefined,
-      admissionDateTo: admissionDateTo || undefined,
+      isActive: isActive === '' ? undefined : isActive,
     });
+  }, [search, departmentId, position, isActive, onFilterChange]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
   };
 
   return (
@@ -96,31 +87,9 @@ export default function EmployeeFilter({ onFilterChange }: EmployeeFilterProps) 
         </select>
       </div>
 
-      <div>
-        <label htmlFor="admissionDateFrom" className={styles.label}>Admissão de</label>
-        <input
-          type="date"
-          id="admissionDateFrom"
-          className={styles.input}
-          value={admissionDateFrom}
-          onChange={(e) => setAdmissionDateFrom(e.target.value)}
-        />
+      <div className={styles.actions}>
+        <button type="submit" className={styles.button}>Filtrar</button>
       </div>
-
-      <div>
-        <label htmlFor="admissionDateTo" className={styles.label}>Até</label>
-        <input
-          type="date"
-          id="admissionDateTo"
-          className={styles.input}
-          value={admissionDateTo}
-          onChange={(e) => setAdmissionDateTo(e.target.value)}
-        />
-      </div>
-
-      <button type="submit" className={styles.button}>
-        Filtrar
-      </button>
     </form>
   );
 }

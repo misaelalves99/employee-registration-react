@@ -1,44 +1,43 @@
 // src/components/employee/EmployeeForm.tsx
 
-import { useState, useCallback, useMemo, FormEvent, ChangeEvent } from 'react';
+import { useState, useCallback, useMemo, ChangeEvent, FormEvent } from 'react';
 import { Department } from '../../types/department';
-import { EmployeeFormData } from '../../types/employeeFormData';
 import { POSITIONS, Position } from '../../types/position';
 import styles from './EmployeeForm.module.css';
+import { useEmployee } from '../../hooks/useEmployee';
 
 interface EmployeeFormProps {
   departments: Department[];
-  onSubmit: (formData: EmployeeFormData) => void;
 }
 
-export function EmployeeForm({ departments, onSubmit }: EmployeeFormProps) {
-  const initialFormData: EmployeeFormData = {
+export function EmployeeForm({ departments }: EmployeeFormProps) {
+  const { addEmployee } = useEmployee();
+
+  const initialFormData = {
     name: '',
     cpf: '',
     email: '',
     phone: '',
     address: '',
-    position: '' as Position,
+    position: '' as Position | '',
     departmentId: '',
     salary: '',
     admissionDate: '',
     isActive: true,
   };
 
-  const [formData, setFormData] = useState<EmployeeFormData>(initialFormData);
-  const [errors, setErrors] = useState<Partial<Record<keyof EmployeeFormData, string>>>({});
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState<Partial<Record<keyof typeof initialFormData, string>>>({});
 
   const validate = useCallback(() => {
-    const newErrors: Partial<Record<keyof EmployeeFormData, string>> = {};
+    const newErrors: Partial<Record<keyof typeof initialFormData, string>> = {};
 
     if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório.';
     if (!formData.cpf.trim()) newErrors.cpf = 'CPF é obrigatório.';
     if (!formData.email.trim()) newErrors.email = 'Email é obrigatório.';
-    if (!formData.phone.trim()) newErrors.phone = 'Telefone é obrigatório.';
-    if (!formData.address.trim()) newErrors.address = 'Endereço é obrigatório.';
     if (!formData.position) newErrors.position = 'Cargo é obrigatório.';
     if (!formData.departmentId) newErrors.departmentId = 'Departamento é obrigatório.';
-    if (formData.salary === '') {
+    if (!formData.salary) {
       newErrors.salary = 'Salário é obrigatório.';
     } else if (isNaN(Number(formData.salary)) || Number(formData.salary) < 0) {
       newErrors.salary = 'Salário deve ser um número positivo.';
@@ -51,28 +50,28 @@ export function EmployeeForm({ departments, onSubmit }: EmployeeFormProps) {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'position' ? (value as Position) : value,
+      [name]: name === 'position' ? (value as Position | '') : value,
     }));
   };
 
   const handleCheckboxChange = () => {
-    setFormData((prev) => ({
-      ...prev,
-      isActive: !prev.isActive,
-    }));
+    setFormData((prev) => ({ ...prev, isActive: !prev.isActive }));
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      onSubmit({
-        ...formData,
-        salary: formData.salary.trim(),
-      });
-    }
+    if (!validate()) return;
+
+    addEmployee({
+      ...formData,
+      departmentId: Number(formData.departmentId),
+      salary: Number(formData.salary),
+      position: formData.position as Position,
+    });
+
+    setFormData(initialFormData);
   };
 
   const departmentOptions = useMemo(
@@ -118,13 +117,11 @@ export function EmployeeForm({ departments, onSubmit }: EmployeeFormProps) {
       <div>
         <label className={styles.label}>Telefone</label>
         <input type="text" name="phone" value={formData.phone} onChange={handleChange} className={styles.input} />
-        {errors.phone && <p className={styles.errorText}>{errors.phone}</p>}
       </div>
 
       <div>
         <label className={styles.label}>Endereço</label>
         <input type="text" name="address" value={formData.address} onChange={handleChange} className={styles.input} />
-        {errors.address && <p className={styles.errorText}>{errors.address}</p>}
       </div>
 
       <div>
@@ -147,37 +144,18 @@ export function EmployeeForm({ departments, onSubmit }: EmployeeFormProps) {
 
       <div>
         <label className={styles.label}>Salário</label>
-        <input
-          type="number"
-          name="salary"
-          value={formData.salary}
-          onChange={handleChange}
-          className={styles.input}
-          step="0.01"
-        />
+        <input type="number" name="salary" value={formData.salary} onChange={handleChange} className={styles.input} step="0.01" />
         {errors.salary && <p className={styles.errorText}>{errors.salary}</p>}
       </div>
 
       <div>
         <label className={styles.label}>Data de Admissão</label>
-        <input
-          type="date"
-          name="admissionDate"
-          value={formData.admissionDate}
-          onChange={handleChange}
-          className={styles.input}
-        />
+        <input type="date" name="admissionDate" value={formData.admissionDate} onChange={handleChange} className={styles.input} />
         {errors.admissionDate && <p className={styles.errorText}>{errors.admissionDate}</p>}
       </div>
 
       <div className={styles.checkboxContainer}>
-        <input
-          type="checkbox"
-          checked={formData.isActive}
-          onChange={handleCheckboxChange}
-          className={styles.formCheckbox}
-          id="isActive"
-        />
+        <input type="checkbox" checked={formData.isActive} onChange={handleCheckboxChange} className={styles.formCheckbox} id="isActive" />
         <label htmlFor="isActive">Ativo</label>
       </div>
 

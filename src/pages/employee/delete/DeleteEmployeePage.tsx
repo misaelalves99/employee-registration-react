@@ -1,8 +1,9 @@
 // src/components/employee/delete/DeleteEmployeePage.tsx
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Employee } from '../../../types/employee';
-import { getMockEmployees, deleteMockEmployee } from '../../../lib/mock/mockData';
+import { useEmployee } from '../../../hooks/useEmployee';
 import styles from './DeleteEmployeePage.module.css';
 
 interface EmployeeDeletePageProps {
@@ -14,12 +15,14 @@ interface Props {
 }
 
 export default function EmployeeDeletePage({ params }: Props) {
+  const { employees, deleteEmployee } = useEmployee();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const employees = getMockEmployees();
     const found = employees.find((emp) => emp.id === Number(params.id));
     if (!found) {
       setError('Funcionário não encontrado.');
@@ -27,17 +30,19 @@ export default function EmployeeDeletePage({ params }: Props) {
       setEmployee(found);
     }
     setLoading(false);
-  }, [params.id]);
+  }, [params.id, employees]);
 
   const handleDelete = () => {
+    if (!employee) return;
+
     const confirmDelete = window.confirm(
-      `Tem certeza que deseja deletar o funcionário ${employee?.name}?`
+      `Tem certeza que deseja deletar o funcionário ${employee.name}?`
     );
     if (!confirmDelete) return;
 
     try {
-      deleteMockEmployee(Number(params.id));
-      window.location.href = '/employee';
+      deleteEmployee(employee.id);
+      navigate('/employee'); // redireciona após exclusão
     } catch (err) {
       console.error(err);
       setError('Erro ao deletar funcionário.');
@@ -56,25 +61,17 @@ export default function EmployeeDeletePage({ params }: Props) {
       </p>
 
       <div className={styles.detailsBox}>
-        <p>
-          <strong>CPF:</strong> {employee.cpf}
-        </p>
-        <p>
-          <strong>Email:</strong> {employee.email}
-        </p>
-        <p>
-          <strong>Cargo:</strong> {employee.position}
-        </p>
-        <p>
-          <strong>Departamento:</strong> {employee.department?.name ?? 'Não informado'}
-        </p>
+        <p><strong>CPF:</strong> {employee.cpf}</p>
+        <p><strong>Email:</strong> {employee.email}</p>
+        <p><strong>Cargo:</strong> {employee.position}</p>
+        <p><strong>Departamento:</strong> {employee.department?.name ?? 'Não informado'}</p>
       </div>
 
       <div className={styles.buttons}>
         <button onClick={handleDelete} className={styles.btnDelete}>
           Deletar
         </button>
-        <button onClick={() => (window.location.href = '/employee')} className={styles.btnCancel}>
+        <button onClick={() => navigate('/employee')} className={styles.btnCancel}>
           Cancelar
         </button>
       </div>

@@ -1,35 +1,38 @@
 // src/components/employee/edit/EditEmployeePage.tsx
 
-import { useState, useEffect, FormEvent } from 'react'
-import { EmployeeForm } from '../../../types/employeeForm'
-import { Department } from '../../../types/department'
-import { POSITIONS } from '../../../types/position'
-import { getEmployeeById, updateMockEmployee } from '../../../lib/mock/employees'
-import { getMockDepartments } from '../../../lib/mock/departments'
-import styles from './EditEmployeePage.module.css'
+import { useState, useEffect, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEmployee } from '../../../hooks/useEmployee';
+import { EmployeeForm } from '../../../types/employeeForm';
+import { Department } from '../../../types/department';
+import { POSITIONS } from '../../../types/position';
+import { getMockDepartments } from '../../../lib/mock/departments';
+import styles from './EditEmployeePage.module.css';
 
 interface EditEmployeePageProps {
-  id: string
+  id: string;
 }
 
 interface Props {
-  params: EditEmployeePageProps
+  params: EditEmployeePageProps;
 }
 
 export default function EditEmployeePage({ params }: Props) {
-  const [employee, setEmployee] = useState<EmployeeForm | null>(null)
-  const [departments, setDepartments] = useState<Department[]>([])
-  const [loading, setLoading] = useState(true)
-  const [errors, setErrors] = useState<string[]>([])
+  const { employees, updateEmployee } = useEmployee(); // hook do contexto
+  const [employee, setEmployee] = useState<EmployeeForm | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const id = Number(params.id)
-    const data = getEmployeeById(id)
+    const id = Number(params.id);
+    const data = employees.find(emp => emp.id === id);
 
     if (!data) {
-      setErrors(['Funcionário não encontrado'])
-      setLoading(false)
-      return
+      setErrors(['Funcionário não encontrado']);
+      setLoading(false);
+      return;
     }
 
     setEmployee({
@@ -44,33 +47,33 @@ export default function EditEmployeePage({ params }: Props) {
       salary: data.salary,
       admissionDate: data.admissionDate.slice(0, 10),
       isActive: data.isActive,
-    })
+    });
 
-    getMockDepartments().then((deps) => {
-      setDepartments(deps)
-      setLoading(false)
-    })
-  }, [params.id])
+    getMockDepartments().then(deps => {
+      setDepartments(deps);
+      setLoading(false);
+    });
+  }, [params.id, employees]);
 
   function handleChange<K extends keyof EmployeeForm>(key: K, value: EmployeeForm[K]) {
-    if (!employee) return
-    setEmployee({ ...employee, [key]: value })
+    if (!employee) return;
+    setEmployee({ ...employee, [key]: value });
   }
 
   async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    if (!employee) return
+    e.preventDefault();
+    if (!employee) return;
 
-    const updated = updateMockEmployee(employee.id, employee)
-    if (updated) {
-      window.location.href = '/employee'
+    const success = updateEmployee(employee.id, employee); // atualiza via contexto
+    if (success) {
+      navigate('/employee');
     } else {
-      setErrors(['Erro ao salvar dados do funcionário.'])
+      setErrors(['Erro ao salvar dados do funcionário.']);
     }
   }
 
-  if (loading) return <p className={styles.loading}>Carregando...</p>
-  if (!employee) return <p className={styles.error}>Funcionário não encontrado</p>
+  if (loading) return <p className={styles.loading}>Carregando...</p>;
+  if (!employee) return <p className={styles.error}>Funcionário não encontrado</p>;
 
   return (
     <div className={styles.container}>
@@ -103,7 +106,7 @@ export default function EditEmployeePage({ params }: Props) {
               type="text"
               className={styles.input}
               value={employee[key as keyof EmployeeForm] as string}
-              onChange={(e) => handleChange(key as keyof EmployeeForm, e.target.value)}
+              onChange={e => handleChange(key as keyof EmployeeForm, e.target.value)}
               required={key !== 'phone' && key !== 'address'}
             />
           </div>
@@ -117,10 +120,10 @@ export default function EditEmployeePage({ params }: Props) {
             id="position"
             className={styles.input}
             value={employee.position}
-            onChange={(e) => handleChange('position', e.target.value as typeof POSITIONS[number])}
+            onChange={e => handleChange('position', e.target.value as typeof POSITIONS[number])}
             required
           >
-            {POSITIONS.map((pos) => (
+            {POSITIONS.map(pos => (
               <option key={pos} value={pos}>
                 {pos}
               </option>
@@ -136,12 +139,12 @@ export default function EditEmployeePage({ params }: Props) {
             id="departmentId"
             className={styles.input}
             value={employee.departmentId ?? ''}
-            onChange={(e) =>
+            onChange={e =>
               handleChange('departmentId', e.target.value ? Number(e.target.value) : null)
             }
           >
             <option value="">Nenhum</option>
-            {departments.map((dep) => (
+            {departments.map(dep => (
               <option key={dep.id} value={dep.id}>
                 {dep.name}
               </option>
@@ -159,7 +162,7 @@ export default function EditEmployeePage({ params }: Props) {
             step="0.01"
             className={styles.input}
             value={employee.salary}
-            onChange={(e) => handleChange('salary', parseFloat(e.target.value))}
+            onChange={e => handleChange('salary', parseFloat(e.target.value))}
             required
           />
         </div>
@@ -173,7 +176,7 @@ export default function EditEmployeePage({ params }: Props) {
             type="date"
             className={styles.input}
             value={employee.admissionDate}
-            onChange={(e) => handleChange('admissionDate', e.target.value)}
+            onChange={e => handleChange('admissionDate', e.target.value)}
             required
           />
         </div>
@@ -184,7 +187,7 @@ export default function EditEmployeePage({ params }: Props) {
               id="isActive"
               type="checkbox"
               checked={employee.isActive}
-              onChange={(e) => handleChange('isActive', e.target.checked)}
+              onChange={e => handleChange('isActive', e.target.checked)}
             />
             Ativo
           </label>
@@ -194,11 +197,15 @@ export default function EditEmployeePage({ params }: Props) {
           <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`}>
             Salvar
           </button>
-          <a href="/employee" className={`${styles.btn} ${styles.btnSecondary}`}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnSecondary}`}
+            onClick={() => navigate('/employee')}
+          >
             Voltar
-          </a>
+          </button>
         </div>
       </form>
     </div>
-  )
+  );
 }
