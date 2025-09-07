@@ -30,6 +30,8 @@ describe('getMockDepartments', () => {
   it('deve retornar uma nova instância do array a cada chamada', async () => {
     const dep1 = await getMockDepartments();
     const dep2 = await getMockDepartments();
-    expect(dep1).not.toBe(dep2); // garante que não é a mesma referência
+    expect(dep1).not.toBe(dep2); // agora passa
+    // Também podemos checar que o conteúdo é igual
+    expect(dep1).toEqual(dep2);
   });
 });

@@ -2,16 +2,13 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DeleteEmployeePage from './DeleteEmployeePage';
-import { getMockEmployees, deleteMockEmployee } from '../../../lib/mock/mockData';
+import { useEmployee } from '../../../hooks/useEmployee';
 import { MemoryRouter } from 'react-router-dom';
 
-jest.mock('../../../lib/mock/mockData', () => ({
-  getMockEmployees: jest.fn(),
-  deleteMockEmployee: jest.fn(),
-}));
-
-describe('DeleteEmployeePage', () => {
-  const employeeMock = {
+// Mock do hook useEmployee
+const mockDeleteEmployee = jest.fn();
+const mockEmployees = [
+  {
     id: 1,
     name: 'João Silva',
     cpf: '123.456.789-00',
@@ -24,14 +21,28 @@ describe('DeleteEmployeePage', () => {
     salary: 5500,
     admissionDate: '2022-01-15',
     isActive: true,
-  };
+  },
+];
 
+jest.mock('../../../hooks/useEmployee', () => ({
+  useEmployee: jest.fn(),
+}));
+
+// Mock do navigate
+const mockedNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockedNavigate,
+}));
+
+describe('DeleteEmployeePage', () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    (getMockEmployees as jest.Mock).mockReturnValue([employeeMock]);
-    (deleteMockEmployee as jest.Mock).mockImplementation(() => {});
+    (useEmployee as jest.Mock).mockReturnValue({
+      employees: mockEmployees,
+      deleteEmployee: mockDeleteEmployee,
+    });
     window.confirm = jest.fn();
-    window.location.href = '';
   });
 
   it('mostra loading inicialmente', () => {
@@ -58,7 +69,11 @@ describe('DeleteEmployeePage', () => {
   });
 
   it('exibe erro quando funcionário não é encontrado', async () => {
-    (getMockEmployees as jest.Mock).mockReturnValue([]);
+    (useEmployee as jest.Mock).mockReturnValue({
+      employees: [],
+      deleteEmployee: mockDeleteEmployee,
+    });
+
     render(
       <MemoryRouter>
         <DeleteEmployeePage params={{ id: '999' }} />
@@ -70,7 +85,7 @@ describe('DeleteEmployeePage', () => {
     });
   });
 
-  it('chama deleteMockEmployee e redireciona quando confirmado', async () => {
+  it('chama deleteEmployee e redireciona quando confirmado', async () => {
     (window.confirm as jest.Mock).mockReturnValue(true);
 
     render(
@@ -85,8 +100,8 @@ describe('DeleteEmployeePage', () => {
     expect(window.confirm).toHaveBeenCalledWith(
       'Tem certeza que deseja deletar o funcionário João Silva?'
     );
-    expect(deleteMockEmployee).toHaveBeenCalledWith(1);
-    expect(window.location.href).toBe('/employee');
+    expect(mockDeleteEmployee).toHaveBeenCalledWith(1);
+    expect(mockedNavigate).toHaveBeenCalledWith('/employee');
   });
 
   it('não deleta quando cancelado', async () => {
@@ -101,7 +116,38 @@ describe('DeleteEmployeePage', () => {
     await waitFor(() => screen.getByText(/^deletar$/i));
     fireEvent.click(screen.getByText(/^deletar$/i));
 
-    expect(deleteMockEmployee).not.toHaveBeenCalled();
-    expect(window.location.href).toBe('');
+    expect(mockDeleteEmployee).not.toHaveBeenCalled();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  it('botão Cancelar chama navigate corretamente', async () => {
+    render(
+      <MemoryRouter>
+        <DeleteEmployeePage params={{ id: '1' }} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => screen.getByText(/^cancelar$/i));
+    fireEvent.click(screen.getByText(/^cancelar$/i));
+
+    expect(mockedNavigate).toHaveBeenCalledWith('/employee');
+  });
+
+  it('exibe erro se deleteEmployee lança exceção', async () => {
+    (window.confirm as jest.Mock).mockReturnValue(true);
+    mockDeleteEmployee.mockImplementation(() => { throw new Error('Falha'); });
+
+    render(
+      <MemoryRouter>
+        <DeleteEmployeePage params={{ id: '1' }} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => screen.getByText(/^deletar$/i));
+    fireEvent.click(screen.getByText(/^deletar$/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/erro ao deletar funcionário/i)).toBeInTheDocument();
+    });
   });
 });

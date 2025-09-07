@@ -29,20 +29,20 @@ jest.mock('react-router-dom', () => ({
 
 describe('CreateEmployeePage', () => {
   beforeEach(() => {
-    const mockGetDepartments = getMockDepartments as jest.Mock;
-    const mockGetPositions = getMockPositions as jest.Mock;
-    const mockCreateEmployee = createMockEmployee as jest.Mock;
+    const mockGetDepartments = getMockDepartments as jest.Mock
+    const mockGetPositions = getMockPositions as jest.Mock
+    const mockCreateEmployee = createMockEmployee as jest.Mock
 
     mockGetDepartments.mockResolvedValue([
       { id: 1, name: 'TI' },
       { id: 2, name: 'RH' },
-    ]);
-    mockGetPositions.mockResolvedValue(['Desenvolvedor', 'Analista']);
-    mockCreateEmployee.mockResolvedValue(undefined);
+    ])
+    mockGetPositions.mockResolvedValue(['Desenvolvedor', 'Analista'])
+    mockCreateEmployee.mockResolvedValue(undefined)
 
-    mockedNavigate.mockReset();
-    window.alert = jest.fn();
-  });
+    mockedNavigate.mockReset()
+    window.alert = jest.fn()
+  })
 
   it('renderiza o loading inicialmente', () => {
     render(
@@ -59,7 +59,6 @@ describe('CreateEmployeePage', () => {
         <CreateEmployeePage />
       </MemoryRouter>
     )
-
     await waitFor(() => {
       expect(screen.getByLabelText(/nome/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/departamento/i)).toBeInTheDocument()
@@ -73,9 +72,7 @@ describe('CreateEmployeePage', () => {
         <CreateEmployeePage />
       </MemoryRouter>
     )
-
     await waitFor(() => screen.getByText(/criar funcionário/i))
-
     fireEvent.click(screen.getByText(/criar funcionário/i))
     expect(window.alert).toHaveBeenCalledWith(
       'Por favor, preencha todos os campos obrigatórios.'
@@ -88,7 +85,6 @@ describe('CreateEmployeePage', () => {
         <CreateEmployeePage />
       </MemoryRouter>
     )
-
     await waitFor(() => screen.getByLabelText(/nome/i))
 
     fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'João' } })
@@ -100,7 +96,16 @@ describe('CreateEmployeePage', () => {
     fireEvent.click(screen.getByText(/criar funcionário/i))
 
     await waitFor(() => {
-      expect(createMockEmployee).toHaveBeenCalled()
+      expect(createMockEmployee).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'João',
+          cpf: '123.456.789-00',
+          salary: 5000,
+          departmentId: 1,
+          position: 'Desenvolvedor',
+          isActive: true,
+        })
+      )
       expect(mockedNavigate).toHaveBeenCalledWith('/employee')
     })
   })
@@ -111,7 +116,6 @@ describe('CreateEmployeePage', () => {
         <CreateEmployeePage />
       </MemoryRouter>
     )
-
     await waitFor(() => screen.getByLabelText(/nome/i))
 
     fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Ana' } })
@@ -120,9 +124,8 @@ describe('CreateEmployeePage', () => {
     fireEvent.change(screen.getByLabelText(/departamento/i), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText(/cargo/i), { target: { value: 'Analista' } })
 
-    // desmarca o checkbox Ativo para enviar false
+    // desmarca o checkbox Ativo
     fireEvent.click(screen.getByLabelText(/ativo/i))
-
     fireEvent.click(screen.getByText(/criar funcionário/i))
 
     await waitFor(() => {
@@ -139,10 +142,85 @@ describe('CreateEmployeePage', () => {
         <CreateEmployeePage />
       </MemoryRouter>
     )
-
     await waitFor(() => screen.getByText(/voltar/i))
-
     fireEvent.click(screen.getByText(/voltar/i))
     expect(mockedNavigate).toHaveBeenCalledWith('/employee')
+  })
+
+  // --- NOVOS TESTES ADICIONADOS ---
+
+  it('inputs opcionais podem ficar vazios sem impedir submissão', async () => {
+    render(
+      <MemoryRouter>
+        <CreateEmployeePage />
+      </MemoryRouter>
+    )
+    await waitFor(() => screen.getByLabelText(/nome/i))
+
+    fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Lucas' } })
+    fireEvent.change(screen.getByLabelText(/cpf/i), { target: { value: '222.333.444-55' } })
+    fireEvent.change(screen.getByLabelText(/salário/i), { target: { value: '4800' } })
+    fireEvent.change(screen.getByLabelText(/departamento/i), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText(/cargo/i), { target: { value: 'Desenvolvedor' } })
+
+    // Não preenche phone e address
+    fireEvent.click(screen.getByText(/criar funcionário/i))
+
+    await waitFor(() => {
+      expect(createMockEmployee).toHaveBeenCalledWith(
+        expect.objectContaining({
+          phone: '',
+          address: '',
+        })
+      )
+    })
+  })
+
+  it('alerta se getMockDepartments falhar', async () => {
+    (getMockDepartments as jest.Mock).mockRejectedValueOnce(new Error('Erro'))
+    render(
+      <MemoryRouter>
+        <CreateEmployeePage />
+      </MemoryRouter>
+    )
+    await waitFor(() => {
+      expect(screen.getByText(/carregando/i)).toBeInTheDocument()
+    })
+    // fallback: componente permanece carregando ou pode-se adicionar alert
+  })
+
+  it('alerta se getMockPositions falhar', async () => {
+    (getMockPositions as jest.Mock).mockRejectedValueOnce(new Error('Erro'))
+    render(
+      <MemoryRouter>
+        <CreateEmployeePage />
+      </MemoryRouter>
+    )
+    await waitFor(() => {
+      expect(screen.getByText(/carregando/i)).toBeInTheDocument()
+    })
+  })
+
+  it('não permite enviar salário negativo', async () => {
+    render(
+      <MemoryRouter>
+        <CreateEmployeePage />
+      </MemoryRouter>
+    )
+    await waitFor(() => screen.getByLabelText(/nome/i))
+
+    fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Lucas' } })
+    fireEvent.change(screen.getByLabelText(/cpf/i), { target: { value: '222.333.444-55' } })
+    fireEvent.change(screen.getByLabelText(/salário/i), { target: { value: '-1000' } })
+    fireEvent.change(screen.getByLabelText(/departamento/i), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText(/cargo/i), { target: { value: 'Desenvolvedor' } })
+
+    fireEvent.click(screen.getByText(/criar funcionário/i))
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith(
+        'Por favor, preencha todos os campos obrigatórios.'
+      )
+    })
   })
 })

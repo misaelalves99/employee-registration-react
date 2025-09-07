@@ -75,4 +75,19 @@ describe('FilterPanel', () => {
       departmentId: 0,
     });
   });
+
+  it('ignora valores inválidos no departmentId', () => {
+    render(<FilterPanel onFilterChange={onFilterChangeMock} />);
+    const departmentInput = screen.getByLabelText('Departamento') as HTMLInputElement;
+    const button = screen.getByText('Aplicar Filtros');
+
+    fireEvent.change(departmentInput, { target: { value: 'abc' } });
+    fireEvent.click(button);
+
+    expect(onFilterChangeMock).toHaveBeenCalledWith({
+      position: undefined,
+      departmentId: undefined,
+    });
+    expect(departmentInput.value).toBe('');
+  });
 });

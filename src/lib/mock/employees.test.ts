@@ -6,6 +6,7 @@ import {
   getAllMockEmployees,
   updateMockEmployee,
   createMockEmployee,
+  deleteMockEmployee,
 } from './employees';
 import { Position } from '../../types/position';
 
@@ -30,11 +31,12 @@ describe('getEmployeeById', () => {
 });
 
 describe('getAllMockEmployees', () => {
-  it('retorna funcionários com campos extras', () => {
+  it('retorna funcionários com campos extras e novas instâncias', () => {
     const all = getAllMockEmployees();
     expect(all[0]).toHaveProperty('departmentName', 'TI');
     expect(all[1]).toHaveProperty('hiredDate', '2021-10-20');
     expect(all[1]).toHaveProperty('active', true);
+    expect(all[0]).not.toBe(mockEmployees[0]); // nova instância
   });
 });
 
@@ -56,7 +58,7 @@ describe('updateMockEmployee', () => {
     expect(updated?.department?.name).toBe(originalDept);
   });
 
-  it('retorna false ao tentar atualizar um funcionário inexistente', () => {
+  it('retorna false ao tentar atualizar funcionário inexistente', () => {
     expect(updateMockEmployee(999, { name: 'Teste' })).toBe(false);
   });
 });
@@ -64,7 +66,6 @@ describe('updateMockEmployee', () => {
 describe('createMockEmployee', () => {
   it('adiciona um novo funcionário corretamente', () => {
     const newEmployee = {
-      id: 3,
       name: 'Carlos Santos',
       cpf: '111.222.333-44',
       email: 'carlos@example.com',
@@ -76,30 +77,39 @@ describe('createMockEmployee', () => {
       admissionDate: '2023-05-10',
       isActive: true,
     };
-    createMockEmployee(newEmployee);
-    const added = getEmployeeById(3);
+    const added = createMockEmployee(newEmployee);
     expect(added).not.toBeNull();
-    expect(added?.name).toBe('Carlos Santos');
-    expect(added?.department?.name).toBe('Marketing');
+    expect(added.name).toBe('Carlos Santos');
+    expect(added.department?.name).toBe('Marketing');
   });
 
   it('atribui department null se departmentId inválido', () => {
     const newEmployee = {
-      id: 4,
       name: 'Teste Sem Departamento',
       cpf: '000.111.222-33',
       email: 'teste@example.com',
       phone: '(11) 96666-6666',
       address: 'Rua D, 101',
       position: 'Analista' as Position,
-      departmentId: 999, // inválido
+      departmentId: 999,
       salary: 3000,
       admissionDate: '2023-08-01',
       isActive: true,
     };
-    createMockEmployee(newEmployee);
-    const added = getEmployeeById(4);
-    expect(added).not.toBeNull();
-    expect(added?.department).toBeNull();
+    const added = createMockEmployee(newEmployee);
+    expect(added.department).toBeNull();
+  });
+});
+
+describe('deleteMockEmployee', () => {
+  it('remove funcionário existente', () => {
+    const id = mockEmployees[0].id;
+    const result = deleteMockEmployee(id);
+    expect(result).toBe(true);
+    expect(getEmployeeById(id)).toBeNull();
+  });
+
+  it('retorna false ao tentar remover funcionário inexistente', () => {
+    expect(deleteMockEmployee(999)).toBe(false);
   });
 });

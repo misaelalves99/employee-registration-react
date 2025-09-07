@@ -5,17 +5,33 @@ import userEvent from '@testing-library/user-event';
 import { EmployeeCreateForm } from './EmployeeCreateForm';
 import { POSITIONS } from '../../types/position';
 
+// Mock de departamentos
 const mockDepartments = [
   { id: 1, name: 'TI' },
-  { id: 2, name: 'RH' }
+  { id: 2, name: 'RH' },
 ];
 
-describe('EmployeeCreateForm', () => {
-  let onCreateMock: jest.Mock;
+// Mock de navigate
+const navigateMock = jest.fn();
 
+// Mock de useEmployee
+const addEmployeeMock = jest.fn();
+
+jest.mock('../../hooks/useEmployee', () => ({
+  useEmployee: () => ({
+    addEmployee: addEmployeeMock,
+  }),
+}));
+
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => navigateMock,
+}));
+
+describe('EmployeeCreateForm', () => {
   beforeEach(() => {
-    onCreateMock = jest.fn().mockResolvedValue(undefined);
-    render(<EmployeeCreateForm departments={mockDepartments} onCreate={onCreateMock} />);
+    jest.clearAllMocks();
+    render(<EmployeeCreateForm departments={mockDepartments} />);
   });
 
   it('renders all input fields and selects', () => {
@@ -41,43 +57,56 @@ describe('EmployeeCreateForm', () => {
     expect(screen.getByText('Departamento é obrigatório.')).toBeInTheDocument();
     expect(screen.getByText('Salário inválido.')).toBeInTheDocument();
     expect(screen.getByText('Data de admissão é obrigatória.')).toBeInTheDocument();
-    expect(onCreateMock).not.toHaveBeenCalled();
+
+    expect(addEmployeeMock).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 
   it('submits valid form data', async () => {
-    // Preencher o formulário
-    userEvent.type(screen.getByLabelText(/Nome/i), 'John Doe');
-    userEvent.type(screen.getByLabelText(/CPF/i), '12345678900');
-    userEvent.type(screen.getByLabelText(/Email/i), 'john@example.com');
-    userEvent.type(screen.getByLabelText(/Telefone/i), '1111-1111');
-    userEvent.type(screen.getByLabelText(/Endereço/i), 'Rua A, 123');
-    userEvent.selectOptions(screen.getByLabelText(/Cargo/i), POSITIONS[0]);
-    userEvent.selectOptions(screen.getByLabelText(/Departamento/i), mockDepartments[0].id.toString());
-    userEvent.type(screen.getByLabelText(/Salário/i), '2500');
-    userEvent.type(screen.getByLabelText(/Data de Admissão/i), '2025-08-21');
+    // Preenche os campos
+    await userEvent.type(screen.getByLabelText(/Nome/i), 'John Doe');
+    await userEvent.type(screen.getByLabelText(/CPF/i), '12345678900');
+    await userEvent.type(screen.getByLabelText(/Email/i), 'john@example.com');
+    await userEvent.type(screen.getByLabelText(/Telefone/i), '1111-1111');
+    await userEvent.type(screen.getByLabelText(/Endereço/i), 'Rua A, 123');
+    await userEvent.selectOptions(screen.getByLabelText(/Cargo/i), POSITIONS[0]);
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Departamento/i),
+      mockDepartments[0].id.toString(),
+    );
+    await userEvent.type(screen.getByLabelText(/Salário/i), '2500');
+    await userEvent.type(screen.getByLabelText(/Data de Admissão/i), '2025-08-21');
 
     fireEvent.click(screen.getByRole('button', { name: /Salvar/i }));
 
     await waitFor(() => {
-      expect(onCreateMock).toHaveBeenCalledTimes(1);
+      expect(addEmployeeMock).toHaveBeenCalledTimes(1);
     });
 
-    const formDataArg = onCreateMock.mock.calls[0][0] as FormData;
-    expect(formDataArg.get('name')).toBe('John Doe');
-    expect(formDataArg.get('cpf')).toBe('12345678900');
-    expect(formDataArg.get('email')).toBe('john@example.com');
-    expect(formDataArg.get('phone')).toBe('1111-1111');
-    expect(formDataArg.get('address')).toBe('Rua A, 123');
-    expect(formDataArg.get('position')).toBe(POSITIONS[0]);
-    expect(formDataArg.get('departmentId')).toBe(mockDepartments[0].id.toString()); // sempre string
-    expect(formDataArg.get('salary')).toBe('2500');
-    expect(formDataArg.get('admissionDate')).toBe('2025-08-21');
+    // Verifica dados passados para addEmployee
+    const payload = addEmployeeMock.mock.calls[0][0];
+    expect(payload).toEqual({
+      name: 'John Doe',
+      cpf: '12345678900',
+      email: 'john@example.com',
+      phone: '1111-1111',
+      address: 'Rua A, 123',
+      position: POSITIONS[0],
+      departmentId: mockDepartments[0].id,
+      salary: 2500,
+      admissionDate: '2025-08-21',
+      isActive: true,
+    });
+
+    expect(navigateMock).toHaveBeenCalledWith('/employee');
   });
 
   it('shows error for invalid salary', async () => {
-    userEvent.type(screen.getByLabelText(/Salário/i), 'abc');
+    await userEvent.type(screen.getByLabelText(/Salário/i), 'abc');
     fireEvent.click(screen.getByRole('button', { name: /Salvar/i }));
+
     expect(await screen.findByText('Salário inválido.')).toBeInTheDocument();
-    expect(onCreateMock).not.toHaveBeenCalled();
+    expect(addEmployeeMock).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });

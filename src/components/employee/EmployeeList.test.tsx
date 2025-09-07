@@ -1,10 +1,13 @@
 // src/components/employee/EmployeeList.test.tsx
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import EmployeeList from './EmployeeList';
-import { Position } from '../../types/position';
+import { EmployeeList } from './EmployeeList';
 import { Employee } from '../../types/employee';
+import { Position } from '../../types/position';
 
+// Mock do hook useEmployee
+const deleteEmployeeMock = jest.fn();
+const updateEmployeeMock = jest.fn();
 const employeesMock: Employee[] = [
   {
     id: 1,
@@ -36,17 +39,26 @@ const employeesMock: Employee[] = [
   },
 ];
 
-describe('EmployeeList', () => {
-  let onDeleteMock: jest.Mock;
-  let onToggleStatusMock: jest.Mock;
+jest.mock('../../hooks/useEmployee', () => ({
+  useEmployee: () => ({
+    employees: employeesMock,
+    deleteEmployee: deleteEmployeeMock,
+    updateEmployee: updateEmployeeMock,
+  }),
+}));
 
+// Mock do window.confirm
+const confirmSpy = jest.spyOn(window, 'confirm');
+
+describe('EmployeeList', () => {
   beforeEach(() => {
-    onDeleteMock = jest.fn();
-    onToggleStatusMock = jest.fn();
+    deleteEmployeeMock.mockClear();
+    updateEmployeeMock.mockClear();
+    confirmSpy.mockClear();
   });
 
   it('renderiza a tabela com todos os funcionários', () => {
-    render(<EmployeeList employees={employeesMock} onDelete={onDeleteMock} onToggleStatus={onToggleStatusMock} />);
+    render(<EmployeeList />);
 
     // Checa nomes e CPFs
     expect(screen.getByText('João Silva')).toBeInTheDocument();
@@ -74,33 +86,34 @@ describe('EmployeeList', () => {
     expect(screen.getAllByTitle('Deletar')).toHaveLength(2);
   });
 
-  it('chama onDelete quando o botão Deletar é clicado', () => {
-    render(<EmployeeList employees={employeesMock} onDelete={onDeleteMock} />);
+  it('chama deleteEmployee quando o usuário confirma', () => {
+    confirmSpy.mockReturnValue(true); // simula "OK" no confirm
+    render(<EmployeeList />);
+
     fireEvent.click(screen.getAllByTitle('Deletar')[0]);
-    expect(onDeleteMock).toHaveBeenCalledTimes(1);
-    expect(onDeleteMock).toHaveBeenCalledWith(employeesMock[0]);
+    expect(deleteEmployeeMock).toHaveBeenCalledTimes(1);
+    expect(deleteEmployeeMock).toHaveBeenCalledWith(1);
   });
 
-  it('chama onToggleStatus quando os botões Ativar/Inativar são clicados', () => {
-    render(<EmployeeList employees={employeesMock} onDelete={onDeleteMock} onToggleStatus={onToggleStatusMock} />);
+  it('não chama deleteEmployee quando o usuário cancela', () => {
+    confirmSpy.mockReturnValue(false); // simula "Cancelar"
+    render(<EmployeeList />);
+
+    fireEvent.click(screen.getAllByTitle('Deletar')[0]);
+    expect(deleteEmployeeMock).not.toHaveBeenCalled();
+  });
+
+  it('chama updateEmployee ao alternar status', () => {
+    render(<EmployeeList />);
 
     // Inativar funcionário ativo
     fireEvent.click(screen.getByTitle('Inativar'));
-    expect(onToggleStatusMock).toHaveBeenCalledTimes(1);
-    expect(onToggleStatusMock).toHaveBeenCalledWith(employeesMock[0]);
+    expect(updateEmployeeMock).toHaveBeenCalledTimes(1);
+    expect(updateEmployeeMock).toHaveBeenCalledWith(1, { isActive: false });
 
     // Ativar funcionário inativo
     fireEvent.click(screen.getByTitle('Ativar'));
-    expect(onToggleStatusMock).toHaveBeenCalledTimes(2);
-    expect(onToggleStatusMock).toHaveBeenCalledWith(employeesMock[1]);
-  });
-
-  it('renderiza corretamente mesmo sem onToggleStatus', () => {
-    render(<EmployeeList employees={employeesMock} onDelete={onDeleteMock} />);
-    // Deve renderizar botões de delete
-    expect(screen.getAllByTitle('Deletar')).toHaveLength(2);
-    // Não deve renderizar botões de toggleStatus
-    expect(screen.queryByTitle('Inativar')).toBeNull();
-    expect(screen.queryByTitle('Ativar')).toBeNull();
+    expect(updateEmployeeMock).toHaveBeenCalledTimes(2);
+    expect(updateEmployeeMock).toHaveBeenCalledWith(2, { isActive: true });
   });
 });

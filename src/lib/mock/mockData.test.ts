@@ -58,4 +58,20 @@ describe('mockData', () => {
     expect(employees[0].id).toBe(2);
     expect(employees[0].name).toBe('Second');
   });
+
+  it('getMockEmployees retorna array vazio se window não estiver definido', () => {
+    const originalWindow = globalThis.window;
+    // @ts-expect-error no window
+    globalThis.window = undefined;
+    expect(getMockEmployees()).toEqual([]);
+    globalThis.window = originalWindow;
+  });
+
+  it('deleteMockEmployee não faz nada se window não estiver definido', () => {
+    const originalWindow = globalThis.window;
+    // @ts-expect-error no window
+    globalThis.window = undefined;
+    expect(() => deleteMockEmployee(1)).not.toThrow();
+    globalThis.window = originalWindow;
+  });
 });

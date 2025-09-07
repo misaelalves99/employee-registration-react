@@ -85,23 +85,19 @@ describe('EmployeePage', () => {
   })
 
   it('renderiza a lista de funcionários', () => {
-    render(
-      <MemoryRouter>
-        <EmployeePage />
-      </MemoryRouter>
-    )
+    render(<MemoryRouter><EmployeePage /></MemoryRouter>)
 
     expect(screen.getByText(/lista de funcionários/i)).toBeInTheDocument()
     expect(screen.getByText('João Silva')).toBeInTheDocument()
     expect(screen.getByText('Maria Oliveira')).toBeInTheDocument()
+    // Confere botões de ação
+    expect(screen.getAllByText(/detalhes/i)[0]).toBeInTheDocument()
+    expect(screen.getAllByText(/editar/i)[0]).toBeInTheDocument()
+    expect(screen.getAllByText(/ativar|inativar/i).length).toBeGreaterThan(0)
   })
 
   it('filtra funcionários por search', async () => {
-    render(
-      <MemoryRouter>
-        <EmployeePage />
-      </MemoryRouter>
-    )
+    render(<MemoryRouter><EmployeePage /></MemoryRouter>)
 
     const searchInput = screen.getByPlaceholderText(/buscar por nome, e-mail ou telefone/i)
     fireEvent.change(searchInput, { target: { value: 'Maria' } })
@@ -113,11 +109,7 @@ describe('EmployeePage', () => {
   })
 
   it('filtra funcionários por EmployeeFilter', async () => {
-    render(
-      <MemoryRouter>
-        <EmployeePage />
-      </MemoryRouter>
-    )
+    render(<MemoryRouter><EmployeePage /></MemoryRouter>)
 
     fireEvent.click(screen.getByText(/filtrar ativos/i))
 
@@ -128,14 +120,9 @@ describe('EmployeePage', () => {
   })
 
   it('toggleActiveStatus altera status do funcionário', async () => {
-    // Mock do window.confirm para sempre confirmar
     jest.spyOn(window, 'confirm').mockImplementation(() => true)
 
-    render(
-      <MemoryRouter>
-        <EmployeePage />
-      </MemoryRouter>
-    )
+    render(<MemoryRouter><EmployeePage /></MemoryRouter>)
 
     const toggleButton = screen.getByText('Ativar')
     fireEvent.click(toggleButton)
@@ -148,11 +135,7 @@ describe('EmployeePage', () => {
   })
 
   it('abre e confirma exclusão de funcionário', async () => {
-    render(
-      <MemoryRouter>
-        <EmployeePage />
-      </MemoryRouter>
-    )
+    render(<MemoryRouter><EmployeePage /></MemoryRouter>)
 
     fireEvent.click(screen.getAllByText('Deletar')[0])
     fireEvent.click(screen.getByText('Confirmar Delete'))
@@ -163,11 +146,7 @@ describe('EmployeePage', () => {
   })
 
   it('abre e fecha modal sem deletar', async () => {
-    render(
-      <MemoryRouter>
-        <EmployeePage />
-      </MemoryRouter>
-    )
+    render(<MemoryRouter><EmployeePage /></MemoryRouter>)
 
     fireEvent.click(screen.getAllByText('Deletar')[0])
     fireEvent.click(screen.getByText('Fechar Modal'))

@@ -1,87 +1,59 @@
 // src/components/employee/EmployeeToggleStatusButton.test.tsx
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { EmployeeToggleStatusButton } from './EmployeeToggleStatusButton';
-import { rest, RestRequest, RestContext } from 'msw';
-import { setupServer } from 'msw/node';
+import { useEmployee } from '../../hooks/useEmployee';
 
-const employeeId = 1;
-const onToggleMock = jest.fn();
-
-// Configuração do servidor MSW com tipos corretos
-const server = setupServer(
-  rest.post('/api/employee/inactivate/:id', (_req: RestRequest, res, ctx: RestContext) => {
-    return res(ctx.status(200));
-  }),
-  rest.post('/api/employee/reactivate/:id', (_req: RestRequest, res, ctx: RestContext) => {
-    return res(ctx.status(200));
-  })
-);
-
-// Ciclo de vida do servidor
-beforeAll(() => server.listen());
-afterEach(() => {
-  server.resetHandlers();
-  onToggleMock.mockClear();
-});
-afterAll(() => server.close());
+jest.mock('../../hooks/useEmployee');
 
 describe('EmployeeToggleStatusButton', () => {
+  const updateEmployeeMock = jest.fn();
   let alertMock: jest.SpyInstance;
 
   beforeEach(() => {
+    (useEmployee as jest.Mock).mockReturnValue({
+      updateEmployee: updateEmployeeMock,
+    });
+    updateEmployeeMock.mockClear();
+
     alertMock = jest.spyOn(window, 'alert').mockImplementation(() => {});
   });
+
   afterEach(() => {
     alertMock.mockRestore();
   });
 
   it('renderiza corretamente como ativo ou inativo', () => {
-    const { rerender } = render(
-      <EmployeeToggleStatusButton employeeId={employeeId} isActive={true} onToggle={onToggleMock} />
-    );
+    const { rerender } = render(<EmployeeToggleStatusButton employeeId={1} isActive={true} />);
+    const button = screen.getByRole('button');
 
-    expect(screen.getByRole('button')).toHaveTextContent('Inativo');
-    expect(screen.getByRole('button')).toHaveAttribute('title', 'Inativar Funcionário');
+    expect(button).toHaveTextContent('Inativo');
+    expect(button).toHaveAttribute('title', 'Inativar Funcionário');
 
-    rerender(
-      <EmployeeToggleStatusButton employeeId={employeeId} isActive={false} onToggle={onToggleMock} />
-    );
-
+    rerender(<EmployeeToggleStatusButton employeeId={1} isActive={false} />);
     expect(screen.getByRole('button')).toHaveTextContent('Ativo');
     expect(screen.getByRole('button')).toHaveAttribute('title', 'Ativar Funcionário');
   });
 
-  it('chama API correta e onToggle ao inativar', async () => {
-    render(<EmployeeToggleStatusButton employeeId={employeeId} isActive={true} onToggle={onToggleMock} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('button')).toBeDisabled();
+  it('chama updateEmployee ao clicar no botão', () => {
+    render(<EmployeeToggleStatusButton employeeId={1} isActive={true} />);
+    const button = screen.getByRole('button');
 
-    await waitFor(() => expect(onToggleMock).toHaveBeenCalledWith(false));
-    expect(screen.getByRole('button')).not.toBeDisabled();
+    fireEvent.click(button);
+    expect(button).not.toBeDisabled(); // loading false imediatamente após a execução síncrona
+    expect(updateEmployeeMock).toHaveBeenCalledWith(1, { isActive: false });
+
+    // Testa reverso
+    render(<EmployeeToggleStatusButton employeeId={1} isActive={false} />);
+    fireEvent.click(screen.getByRole('button'));
+    expect(updateEmployeeMock).toHaveBeenCalledWith(1, { isActive: true });
   });
 
-  it('chama API correta e onToggle ao reativar', async () => {
-    render(<EmployeeToggleStatusButton employeeId={employeeId} isActive={false} onToggle={onToggleMock} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('button')).toBeDisabled();
-
-    await waitFor(() => expect(onToggleMock).toHaveBeenCalledWith(true));
-    expect(screen.getByRole('button')).not.toBeDisabled();
-  });
-
-  it('mostra alerta em caso de erro na API', async () => {
-    server.use(
-      rest.post('/api/employee/inactivate/:id', (_req: RestRequest, res, ctx: RestContext) => {
-        return res(ctx.status(500));
-      })
-    );
-
-    render(<EmployeeToggleStatusButton employeeId={employeeId} isActive={true} onToggle={onToggleMock} />);
+  it('mostra alerta se updateEmployee lançar erro', () => {
+    updateEmployeeMock.mockImplementation(() => { throw new Error('fail'); });
+    render(<EmployeeToggleStatusButton employeeId={1} isActive={true} />);
     fireEvent.click(screen.getByRole('button'));
 
-    await waitFor(() => expect(alertMock).toHaveBeenCalledWith('Erro ao atualizar status.'));
-    expect(onToggleMock).not.toHaveBeenCalled();
-    expect(screen.getByRole('button')).not.toBeDisabled();
+    expect(alertMock).toHaveBeenCalledWith('Erro ao atualizar status.');
   });
 });

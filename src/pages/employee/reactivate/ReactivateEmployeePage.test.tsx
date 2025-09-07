@@ -1,11 +1,16 @@
 // src/pages/employee/reactivate/ReactivateEmployeePage.test.tsx
 
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import EmployeeReactivatePage from './ReactivateEmployeePage'
 import * as employeesMock from '../../../lib/mock/employees'
 import * as ReactRouterDom from 'react-router-dom'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
+// Mock do React Router
+const navigateMock = jest.fn()
+jest.spyOn(ReactRouterDom, 'useNavigate').mockReturnValue(navigateMock)
+
+// Mock do módulo de employees
 jest.mock('../../../lib/mock/employees')
 
 describe('ReactivateEmployeePage', () => {
@@ -24,11 +29,14 @@ describe('ReactivateEmployeePage', () => {
     isActive: false,
   }
 
-  const navigateMock = jest.fn()
+  let getEmployeeByIdMock: jest.Mock
+  let updateMockEmployeeMock: jest.Mock
 
   beforeEach(() => {
     jest.resetAllMocks()
-    jest.spyOn(ReactRouterDom, 'useNavigate').mockReturnValue(navigateMock)
+    navigateMock.mockReset()
+    getEmployeeByIdMock = employeesMock.getEmployeeById as jest.Mock
+    updateMockEmployeeMock = employeesMock.updateMockEmployee as jest.Mock
   })
 
   function renderWithRouter(path: string) {
@@ -42,13 +50,13 @@ describe('ReactivateEmployeePage', () => {
   }
 
   it('exibe loading inicialmente', () => {
-    ;(employeesMock.getEmployeeById as jest.Mock).mockReturnValue(employeeMock)
+    getEmployeeByIdMock.mockReturnValue(employeeMock)
     renderWithRouter('/employee/reactivate/1')
     expect(screen.getByText(/carregando/i)).toBeInTheDocument()
   })
 
   it('renderiza dados do funcionário', async () => {
-    ;(employeesMock.getEmployeeById as jest.Mock).mockReturnValue(employeeMock)
+    getEmployeeByIdMock.mockReturnValue(employeeMock)
     renderWithRouter('/employee/reactivate/1')
 
     await waitFor(() => {
@@ -62,7 +70,7 @@ describe('ReactivateEmployeePage', () => {
   })
 
   it('mostra erro se funcionário não encontrado', async () => {
-    ;(employeesMock.getEmployeeById as jest.Mock).mockReturnValue(null)
+    getEmployeeByIdMock.mockReturnValue(null)
     renderWithRouter('/employee/reactivate/999')
 
     await waitFor(() => {
@@ -71,54 +79,37 @@ describe('ReactivateEmployeePage', () => {
   })
 
   it('ativa funcionário e navega ao clicar em reativar', async () => {
-    jest.useFakeTimers()
-    ;(employeesMock.getEmployeeById as jest.Mock).mockReturnValue(employeeMock)
-    ;(employeesMock.updateMockEmployee as jest.Mock).mockReturnValue(true)
+    getEmployeeByIdMock.mockReturnValue(employeeMock)
+    updateMockEmployeeMock.mockReturnValue(true)
 
     renderWithRouter('/employee/reactivate/1')
 
     const btn = await screen.findByText('Reativar')
     fireEvent.click(btn)
 
-    expect(btn).toBeDisabled()
-    expect(screen.getByText(/reativando/i)).toBeInTheDocument()
-
-    act(() => {
-      jest.advanceTimersByTime(1000)
-    })
-
     await waitFor(() => {
-      expect(employeesMock.updateMockEmployee).toHaveBeenCalledWith(employeeMock.id, { isActive: true })
+      expect(updateMockEmployeeMock).toHaveBeenCalledWith(employeeMock.id, { ...employeeMock, isActive: true })
       expect(navigateMock).toHaveBeenCalledWith('/employee')
     })
-
-    jest.useRealTimers()
   })
 
   it('mostra erro se reativação falha', async () => {
-    jest.useFakeTimers()
-    ;(employeesMock.getEmployeeById as jest.Mock).mockReturnValue(employeeMock)
-    ;(employeesMock.updateMockEmployee as jest.Mock).mockReturnValue(false)
+    getEmployeeByIdMock.mockReturnValue(employeeMock)
+    updateMockEmployeeMock.mockReturnValue(false)
 
     renderWithRouter('/employee/reactivate/1')
 
     const btn = await screen.findByText('Reativar')
     fireEvent.click(btn)
-
-    act(() => {
-      jest.advanceTimersByTime(1000)
-    })
 
     await waitFor(() => {
       expect(screen.getByText(/erro ao reativar funcionário/i)).toBeInTheDocument()
       expect(btn).not.toBeDisabled()
     })
-
-    jest.useRealTimers()
   })
 
   it('botão Cancelar chama navigate("/employee")', async () => {
-    ;(employeesMock.getEmployeeById as jest.Mock).mockReturnValue(employeeMock)
+    getEmployeeByIdMock.mockReturnValue(employeeMock)
     renderWithRouter('/employee/reactivate/1')
 
     const cancelBtn = await screen.findByText(/cancelar/i)

@@ -2,25 +2,9 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ToggleStatusButton } from './ToggleStatusButton';
-import { rest } from 'msw';
-import { setupServer } from 'msw/node';
 
 const employeeId = 1;
 const onStatusChangeMock = jest.fn();
-
-// Servidor MSW
-const server = setupServer(
-  rest.post(`/api/employees/${employeeId}/toggle-status`, (_req, res, ctx) => {
-    return res(ctx.status(200), ctx.json({ isActive: false }));
-  })
-);
-
-beforeAll(() => server.listen());
-afterEach(() => {
-  server.resetHandlers();
-  onStatusChangeMock.mockClear();
-});
-afterAll(() => server.close());
 
 describe('ToggleStatusButton', () => {
   let alertMock: jest.SpyInstance;
@@ -31,6 +15,7 @@ describe('ToggleStatusButton', () => {
 
   afterEach(() => {
     alertMock.mockRestore();
+    onStatusChangeMock.mockClear();
   });
 
   it('renderiza corretamente o botão ativo e inativo', () => {
@@ -58,12 +43,15 @@ describe('ToggleStatusButton', () => {
     expect(button).toHaveAttribute('title', 'Ativar');
   });
 
-  it('chama a API e atualiza status corretamente', async () => {
+  it('chama onToggleStatus se fornecido e atualiza status corretamente', async () => {
+    const onToggleStatusMock = jest.fn().mockResolvedValue(undefined);
+
     render(
       <ToggleStatusButton
         employeeId={employeeId}
         initialStatus={true}
         onStatusChange={onStatusChangeMock}
+        onToggleStatus={onToggleStatusMock}
       />
     );
 
@@ -74,18 +62,14 @@ describe('ToggleStatusButton', () => {
     expect(button).toBeDisabled();
     expect(button).toHaveTextContent('Carregando...');
 
+    await waitFor(() => expect(onToggleStatusMock).toHaveBeenCalledWith(employeeId, false));
     await waitFor(() => expect(onStatusChangeMock).toHaveBeenCalledWith(false));
+
     expect(button).not.toBeDisabled();
     expect(button).toHaveTextContent('Inativo');
   });
 
-  it('mostra alerta em caso de erro na API', async () => {
-    server.use(
-      rest.post(`/api/employees/${employeeId}/toggle-status`, (_req, res, ctx) => {
-        return res(ctx.status(500));
-      })
-    );
-
+  it('usa fallback mock se onToggleStatus não for fornecido', async () => {
     render(
       <ToggleStatusButton
         employeeId={employeeId}
@@ -97,9 +81,30 @@ describe('ToggleStatusButton', () => {
     const button = screen.getByRole('button');
     fireEvent.click(button);
 
-    await waitFor(() =>
-      expect(alertMock).toHaveBeenCalledWith('Erro ao alterar status')
+    expect(button).toBeDisabled();
+    expect(button).toHaveTextContent('Carregando...');
+
+    await waitFor(() => expect(onStatusChangeMock).toHaveBeenCalledWith(false));
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveTextContent('Inativo');
+  });
+
+  it('mostra alerta em caso de erro no onToggleStatus', async () => {
+    const onToggleStatusMock = jest.fn().mockRejectedValue(new Error('Erro de API'));
+
+    render(
+      <ToggleStatusButton
+        employeeId={employeeId}
+        initialStatus={true}
+        onStatusChange={onStatusChangeMock}
+        onToggleStatus={onToggleStatusMock}
+      />
     );
+
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => expect(alertMock).toHaveBeenCalledWith('Erro ao atualizar status do funcionário.'));
     expect(onStatusChangeMock).not.toHaveBeenCalled();
     expect(button).not.toBeDisabled();
     expect(button).toHaveTextContent('Ativo');
